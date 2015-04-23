@@ -23,7 +23,7 @@ our $DEFAULT_DV = 0;
 
 =head1 NAME
 
-ServiceNow::SOAP - Second Generation ServiceNow Perl API
+ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
 
 =head1 SYNOPSIS
 
@@ -259,7 +259,7 @@ with a pointer to keep track of the current position.
 
 
 our $xmlns = 'http://www.glidesoft.com/';
-our $context; # global variable points to current instance
+our $context; # global variable points to current session
 
 sub SOAP::Transport::HTTP::Client::get_basic_credentials {
     my $user = $context->{user};
@@ -279,22 +279,20 @@ sub debug {
 }
 
 sub ServiceNow {
-    return ServiceNow::SOAP->new(@_);
+    return ServiceNow::SOAP::Session->new(@_);
 }
 
-=head1 Instance Methods
+=head1 Session Methods
 
 =head2 new
 
 =head3 Description
 
-Used to obtain a reference to an Instance object. 
-The Instance object essentially holds the URL and connection credentials for your ServiceNow instance. 
-The first argument is the URL. 
+Used to obtain a reference to an Session object. 
+The Session object essentially holds the URL and connection credentials for your ServiceNow instance. 
+The first argument is the URL or instance name.
 The second argument is the user name.
 The third argument is the password. 
-
-Actually, the first argument can be either a complete URL or simply an instance name    
     
 The fourth (optional) argument to this method is a trace level
 which can be helpful for debugging.
@@ -342,6 +340,7 @@ Instead store the password in a configuration file where it can be easily update
 when the password is rotated.
 
 =cut
+package ServiceNow::SOAP::Session;
 
 sub new {
     my ($pkg, $url, $user, $pass, $trace) = @_;
@@ -351,17 +350,17 @@ sub new {
     $url = $url . '.service-now.com' unless $url =~ /\./;
     # prefix with 'https://' unless the URL already starts with https:
     $url = 'https://' . $url unless $url =~ /^http[s]?:/;
-    my $instance = {
+    my $session = {
         url => $url,
         cookie_jar => HTTP::Cookies->new(),
         user => $user, 
         pass => $pass,
         trace => $trace || 0,
     };
-    bless $instance, $pkg;
-    $context = $instance;
+    bless $session, $pkg;
+    $context = $session;
     print "url=$url; user=$user\n" if $trace;
-    return $instance;
+    return $session;
 }
 
 =head2 table
@@ -463,20 +462,20 @@ sub _trunc {
 }
 
 sub new {
-    my ($pkg, $instance, $name) = @_;
-    $context = $instance;
-    my $baseurl = $instance->{url}; 
-    my $cookie_jar = $instance->{cookie_jar};
+    my ($pkg, $session, $name) = @_;
+    $context = $session;
+    my $baseurl = $session->{url}; 
+    my $cookie_jar = $session->{cookie_jar};
     my $endpoint = "$baseurl/$name.do?SOAP";
     my $client = SOAP::Lite->proxy($endpoint, cookie_jar => $cookie_jar);
     my $new = bless {
-        instance => $instance,
+        session => $session,
         name => $name,
         endpoint => $endpoint,
         client => $client,
         dv => $DEFAULT_DV,
         chunk => $DEFAULT_CHUNK,
-        trace => $instance->{trace}
+        trace => $session->{trace}
     }, $pkg;
     return $new;
 }
@@ -509,14 +508,14 @@ sub callMethod {
     my $self = shift;
     my $methodname = shift;
     my $trace = $self->{trace};
-    my $baseurl = $self->{instance}->{url};
+    my $baseurl = $self->{session}->{url};
     my $tablename = $self->{name};
     my $endpoint = "$baseurl/$tablename.do?SOAP";
     if (($methodname eq 'get' || $methodname eq 'getRecords') && $self->{dv}) {
         my $dv = $self->{dv};
         $endpoint = "$baseurl/$tablename.do?displayvalue=" . $dv . "&SOAP";
     }
-    $context = $self->{instance};
+    $context = $self->{session};
     my $method = SOAP::Data->name($methodname)->attr({xmlns => $xmlns});
     my $client = $self->{client};
     my $som = $client->endpoint($endpoint)->call($method => @_);
@@ -974,7 +973,7 @@ sub attachFile {
     $attachname = $filename unless $attachname;
     $mimetype = "text/plain" unless $mimetype;
     die "Unable to read file \"$filename\"" unless -r $filename;
-    my $ecc_queue = $self->{instance}->table("ecc_queue");
+    my $ecc_queue = $self->{session}->table("ecc_queue");
     open(FILE, $filename) or die "Unable to open \"$filename\"\n$!";
     my ($buf, $base64);
     # encode in multiples of 57 bytes to ensure no padding in the middle
@@ -1043,10 +1042,10 @@ sub getVariables {
     Carp::croak "getVariables: invalid table" unless $self->{name} eq 'sc_req_item';
     my $sysid = shift;
     Carp::croak "getVariables: invalid sys_id: $sysid" unless _isGUID($sysid);
-    my $instance = $self->{instance};
-    my $sc_item_option = $instance->table('sc_item_option');
-    my $sc_item_option_mtom = $instance->table('sc_item_option_mtom');
-    my $item_option_new = $instance->table('item_option_new');
+    my $session = $self->{session};
+    my $sc_item_option = $session->table('sc_item_option');
+    my $sc_item_option_mtom = $session->table('sc_item_option_mtom');
+    my $item_option_new = $session->table('item_option_new');
     my @vmtom = $sc_item_option_mtom->getRecords('request_item', $sysid);
     my $vrefkeys = join ',', map { $_->{sc_item_option} } @vmtom;
     my @vref = $sc_item_option->getRecords('sys_idIN' . $vrefkeys);
@@ -1088,11 +1087,11 @@ L<http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_
 
 =head3 Examples
 
-    my $sys_user_group = $instance->table("sys_user_group")->setDV("true");
+    my $sys_user_group = $session->table("sys_user_group")->setDV("true");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
     print "manager=", $grp->{manager}, "\n";
 
-    my $sys_user_group = $instance->table("sys_user_group")->setDV("all");
+    my $sys_user_group = $session->table("sys_user_group")->setDV("all");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
     print "manager=", $grp->{dv_manager}, "\n";
     
@@ -1131,10 +1130,10 @@ sub setTimeout {
 sub getSchema {
     my $self = shift;
     return $self->{wsdl} if $self->{wsdl};
-    my $instance = $self->{instance};
-    my $user = $instance->{user};
-    my $pass = $instance->{pass};
-    my $baseurl = $instance->{url};
+    my $session = $self->{session};
+    my $user = $session->{user};
+    my $pass = $session->{pass};
+    my $baseurl = $session->{url};
     my $host = $baseurl; $host =~ s!^https?://!!;
     my $useragent = LWP::UserAgent->new();
     $useragent->credentials("$host:443", "Service-now", $user, $pass);
@@ -1160,7 +1159,7 @@ The hash value is the field type.
     
 =head3 Example
 
-    my %fields = $instance->table("sys_user_group")->getSchemaFields("getRecordsResponse");
+    my %fields = $sn->table("sys_user_group")->getSchemaFields("getRecordsResponse");
     foreach my $name (sort keys %fields) {
         print "name=$name type=$fields{$name}\n";
     }
