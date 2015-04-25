@@ -1,6 +1,6 @@
 package ServiceNow::SOAP;
 
-our $VERSION = '0.20';
+our $VERSION = '0.10';
 # v 0.10 2015-04-05 LewisGF initial version based on AltServiceNow
 
 use strict;
@@ -587,7 +587,7 @@ sub get {
 =head3 Description
 
 Returns a list of keys.
-Note that this method returns a list of keys and B<NOT> a comma delimited list.
+Note that this method returns a list of keys, B<NOT> a comma delimited list.
 
 For additional information on available parameters
 refer to the ServiceNow documentation on the B<getKeys> Direct SOAP API method at
@@ -1186,10 +1186,11 @@ A Query object is essentially a list of keys (sys_ids) to a particular table,
 and a pointer to the current position in that list.
 
 To construct a new Query object use the L<query|/query> or L<asQuery|/asQuery> functions.
+L<query|/query> makes a Web Services call (L<getKeys|/getKeys>) to retrieve a list of keys.
+L<asQuery|/asQuery> simply converts an exsiting list of keys into a Query object.
 
 Once constructed, the L<fetch|/fetch> and L<fetchAll|/fetchAll> functions
 can be used to get the actual records in chunks.
-
 
 =head2 Example
 
@@ -1218,22 +1219,11 @@ records to create a new list of sys_ids
     my @childKeys = map { $_->{child} } @relData;
 
 C<@childKeys> now contains a lists of sys_ids for configuration items.
-We convert this list of keys into a query of the C<cmdb_ci> table.
-    
-    my $childQuery = $cmdb_ci->asQuery(@childKeys);
-
-Now we can fetch all the C<cmdb_ci> records.
+We convert this list of keys into a query object
+and fetch athe records from the C<cmdb_ci> table.
 If there are more than 200 records, C<fetchAll> will loop internally 
 until all records have been retrieved.
-
-    @childRecs = $childQuery->fetchAll();
-    foreach my $childRec (@childRecs) {
-        print $childRec->{name}, "\n";            
-    }
-
-If we combine the last two steps, it is clearer that C<@childRecs>
-is a list of C<cmdb_ci> records.
-
+    
     @childRecs = $cmdb_ci->asQuery(@childKeys)->fetchAll();
     foreach my $childRec (@childRecs) {
         print $childRec->{name}, "\n";            
