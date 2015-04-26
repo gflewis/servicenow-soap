@@ -16,13 +16,7 @@
   <li><a href="#NAME">NAME</a></li>
   <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
   <li><a href="#EXAMPLES">EXAMPLES</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a>
-    <ul>
-      <li><a href="#Introduction">Introduction</a></li>
-      <li><a href="#Goals">Goals</a></li>
-      <li><a href="#Querying-large-tables">Querying large tables</a></li>
-    </ul>
-  </li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#SESSION-METHODS">SESSION METHODS</a>
     <ul>
       <li><a href="#new">new</a>
@@ -165,6 +159,7 @@
   </li>
   <li><a href="#QUERY-METHODS">QUERY METHODS</a>
     <ul>
+      <li><a href="#Background">Background</a></li>
       <li><a href="#Description19">Description</a></li>
       <li><a href="#Example9">Example</a></li>
       <li><a href="#fetch">fetch</a>
@@ -294,71 +289,7 @@
 
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
 
-<h2 id="Introduction">Introduction</h2>
-
 <p>This module is a second generation Perl API for ServiceNow. It incorporates what I have learned over several years of accessing ServiceNow via the Web Services API, and also what I have learned by studying the ServiceNow::Simple API written by Greg George.</p>
-
-<h2 id="Goals">Goals</h2>
-
-<p>The goals in implementing this Perl module were as follows.</p>
-
-<ul>
-
-<li><p>Provide an easy to use and performative method for querying large tables. Please refer to examples below of <a href="#QUERY-METHODS">Query objects</a>.</p>
-
-</li>
-<li><p>Make it even more simple. Eliminate unnecessary curly brackets. The core functions should adhere as closely as possible to ServiceNow&#39;s wiki documentation for the Direct Web Service API (<a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API">http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API</a>). Extended functionality is placed separate functions.</p>
-
-</li>
-<li><p>Leverage lists. If you are using the Web Services API to access ServiceNow, you will frequently find yourself dealing with lists of sys_ids. Since Perl is particularly good at dealing with lists, we should surface that opportunity. The <code><code>getKeys</code></code> method here returns a list of keys (not a comma delimited string). Methods are provided which allow a list of records to be easily retrieved based on a list of keys.</p>
-
-<p>By the way, throughout this document I will frequently use <code><code>key</code></code> as a synonym for <code><code>sys_id</code></code>.</p>
-
-</li>
-<li><p>Make the functions intelligent where it is easy to do so.</p>
-
-<p>In this example the first syntax can be distinguished from the second because we assume that a single parameter must be an encoded query.</p>
-
-<pre><code><code>    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$server_tbl</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">"operational_status=1^virtual=false"</span><span class="operator">);</span>
-    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$server_tbl</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">operational_status</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span> <span class="string">virtual</span> <span class="operator">=&gt;</span> <span class="string">"false"</span><span class="operator">);</span>
-</code></code></pre>
-
-</li>
-<li><p>Provide good documentation with lots of examples. You are reading it now. I hope you agree that this goal has been met.</p>
-
-</li>
-</ul>
-
-<h2 id="Querying-large-tables">Querying large tables</h2>
-
-<p>ServiceNow provides two mechanisms to query large tables using the Direct Web Services API.</p>
-
-<ol>
-
-<li><p>First row last row windowing. Specify the <code><code>__first_row</code></code> and <code><code>__last_row</code></code> parameter in each call to <code><code>getRecords</code></code> and gradually work your way through the table.</p>
-
-</li>
-<li><p>Get a complete list of keys up front by calling <code><code>getKeys</code></code>. Then read the records in chunks by passing in a slice of that array with each call to <code><code>getRecords</code></code>.</p>
-
-</li>
-</ol>
-
-<p>There are several reasons to prefer the 2nd approach.</p>
-
-<ul>
-
-<li><p>The performance of the first method degrades with the size of the table. As <code><code>__first_row</code></code> gets larger, each call to <code><code>getRecords</code></code> takes longer. For medium sized tables the first method is slower than the second. For very large tables the first method is completely unusable.</p>
-
-</li>
-<li><p>The first method can sometimes cause existing records to be skipped if new records are inserted while the retrieval process is running (<i>e.g.</i> if Discovery is running).</p>
-
-</li>
-<li><p>Given the inherent limitations of SOAP Web Services, it is a bad idea in general to try to read a lot of data without having some idea of how long it might take. If you are going to make a Web Service query up front to count the number of records, you might as well use that call instead to return a list of the keys.</p>
-
-</li>
-</ul>
-
-<p>This module provides support for the second method through Query objects. A Query object is essentially a list of keys with a pointer to keep track of the current position.</p>
 
 <h1 id="SESSION-METHODS">SESSION METHODS</h1>
 
@@ -815,6 +746,35 @@
 </code></code></pre>
 
 <h1 id="QUERY-METHODS">QUERY METHODS</h1>
+
+<h2 id="Background">Background</h2>
+
+<p>ServiceNow provides two mechanisms to query large tables using the Direct Web Services API.</p>
+
+<ol>
+
+<li><p>First row last row windowing. Specify the <code><code>__first_row</code></code> and <code><code>__last_row</code></code> parameter in each call to <code><code>getRecords</code></code> and gradually work your way through the table.</p>
+
+</li>
+<li><p>Get a complete list of keys up front by calling <code><code>getKeys</code></code>. Then read the records in chunks by passing in a slice of that array with each call to <code><code>getRecords</code></code>.</p>
+
+</li>
+</ol>
+
+<p>There are several reasons to prefer the 2nd approach.</p>
+
+<ul>
+
+<li><p>The performance of the first method degrades with the size of the table. As <code><code>__first_row</code></code> gets larger, each call to <code><code>getRecords</code></code> takes longer. For medium sized tables the first method is slower than the second. For very large tables the first method is completely unusable.</p>
+
+</li>
+<li><p>The first method can sometimes cause existing records to be skipped if new records are inserted while the retrieval process is running (<i>e.g.</i> if Discovery is running).</p>
+
+</li>
+<li><p>Given the inherent limitations of SOAP Web Services, it is a bad idea in general to try to read a lot of data without having some idea of how long it might take. If you are going to make a Web Service query up front to count the number of records, you might as well use that call instead to return a list of the keys.</p>
+
+</li>
+</ul>
 
 <h2 id="Description19">Description</h2>
 

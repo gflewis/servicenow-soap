@@ -124,125 +124,11 @@ ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
     
 =head1 DESCRIPTION
 
-=head2 Introduction
-
 This module is a second generation Perl API for ServiceNow.
 It incorporates what I have learned over several years of accessing
 ServiceNow via the Web Services API, and also what I have learned
 by studying the ServiceNow::Simple API written by Greg George.
 
-=head2 Goals
-
-The goals in implementing this Perl module were as follows.
-
-=over
-
-=item *
-
-Provide an easy to use and performative method
-for querying large tables.
-Please refer to examples below of L<Query objects|/QUERY METHODS>.
-
-=item *
-
-Make it even more simple.
-Eliminate unnecessary curly brackets.
-The core functions should adhere as closely as possible to ServiceNow's
-wiki documentation for the Direct Web Service API
-(L<http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API>).
-Extended functionality is placed separate functions.
-
-=item *
-
-Leverage lists. 
-If you are using the Web Services API to access ServiceNow,
-you will frequently find yourself dealing with lists of sys_ids.
-Since Perl is particularly good at dealing with lists,
-we should surface that opportunity.
-The C<getKeys> method here returns a list of keys (not a comma delimited string).
-Methods are provided which allow a list of records to be easily retrieved
-based on a list of keys.
-
-By the way,
-throughout this document I will frequently use C<key> as a
-synonym for C<sys_id>.
-
-=item *
-
-Make the functions intelligent where it is easy to do so.
-
-In this example the first syntax can be distinguished from the second because
-we assume that a single parameter must be an encoded query.
-    
-    @recs = $server_tbl->getRecord("operational_status=1^virtual=false");
-    @recs = $server_tbl->getRecord(operational_status => 1, virtual => "false");
-
-=item *
-
-Provide good documentation with lots of examples. 
-You are reading it now.
-I hope you agree that this goal has been met.
-    
-=back
-
-=head2 Querying large tables
-
-ServiceNow provides two mechanisms to query large tables 
-using the Direct Web Services API.
-
-=over
-
-=item 1
-
-First row last row windowing.
-Specify the C<__first_row> and C<__last_row> parameter
-in each call to C<getRecords>
-and gradually work your way through the table.
-
-=item 2
-
-Get a complete list of keys up front
-by calling C<getKeys>.
-Then read the records in chunks by passing in 
-a slice of that array with each call to C<getRecords>.
-
-=back
-
-There are several reasons to prefer the 2nd approach.
-
-=over
-
-=item *
-
-The performance of the first method degrades
-with the size of the table.
-As C<__first_row> gets larger,
-each call to C<getRecords> takes longer.
-For medium sized tables the first method is slower than the second.
-For very large tables the first method is completely unusable.
-
-=item *
-
-The first method can sometimes cause existing records to be skipped
-if new records are inserted while the retrieval process
-is running (I<e.g.> if Discovery is running).
-
-=item *
-
-Given the inherent limitations of SOAP Web Services,
-it is a bad idea in general to try to read a lot of data
-without having some idea of how long it might take.
-If you are going to make a Web Service query up front
-to count the number of records, you might as well 
-use that call instead to return a list of the keys.
-
-=back
-
-This module provides support for the second method
-through Query objects.
-A Query object is essentially a list of keys 
-with a pointer to keep track of the current position.
-  
 =cut
 
 
@@ -921,6 +807,7 @@ sub query {
 
 =head2 asQuery
 
+
 =head3 Description
 
 Creates a new Query object from a list of keys.
@@ -1199,6 +1086,59 @@ package ServiceNow::SOAP::Query;
 
 =head1 QUERY METHODS
 
+=head2 Background
+
+ServiceNow provides two mechanisms to query large tables 
+using the Direct Web Services API.
+
+=over
+
+=item 1
+
+First row last row windowing.
+Specify the C<__first_row> and C<__last_row> parameter
+in each call to C<getRecords>
+and gradually work your way through the table.
+
+=item 2
+
+Get a complete list of keys up front
+by calling C<getKeys>.
+Then read the records in chunks by passing in 
+a slice of that array with each call to C<getRecords>.
+
+=back
+
+There are several reasons to prefer the 2nd approach.
+
+=over
+
+=item *
+
+The performance of the first method degrades
+with the size of the table.
+As C<__first_row> gets larger,
+each call to C<getRecords> takes longer.
+For medium sized tables the first method is slower than the second.
+For very large tables the first method is completely unusable.
+
+=item *
+
+The first method can sometimes cause existing records to be skipped
+if new records are inserted while the retrieval process
+is running (I<e.g.> if Discovery is running).
+
+=item *
+
+Given the inherent limitations of SOAP Web Services,
+it is a bad idea in general to try to read a lot of data
+without having some idea of how long it might take.
+If you are going to make a Web Service query up front
+to count the number of records, you might as well 
+use that call instead to return a list of the keys.
+
+=back
+  
 =head2 Description
 
 A Query object is essentially a list of keys (sys_ids) to a particular table,
