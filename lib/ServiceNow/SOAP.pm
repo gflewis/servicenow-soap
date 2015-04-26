@@ -28,35 +28,25 @@ ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
 =head1 SYNOPSIS
 
     # return a reference to a session object
-    my $sn = ServiceNow("https://mycompany.service-now.com", $username, $password);
-    # or
-    my $sn = ServiceNow("mycompany", $username, $password);
+    my $sn = ServiceNow($instancename, $username, $password);
     
     # return a reference to a table object
     my $table = $sn->table($tablename);
 
     # count records
     my $count = $table->count(%parameters);
-    # or
-    my $count = $table->count($encoded_query);
     
     # return a list of sys_ids
     my @keys = $table->getKeys(%parameters);
-    # or
-    my @keys = $table->getKeys($encoded_query);
     
     # return a reference to a hash
     my $rec = $table->get(sys_id => $sys_id);
-    # or
-    my $rec = $table->get($sys_id);
     
     # return a list of references to hashes
     my @recs = $table->getRecords(%parameters);
 
     # call getKeys and return a query object
     my $query = $table->query(%parameters);
-    # or
-    my $query = $table->query($encoded_query);
     
     # convert a list of keys into a query object
     my $query = $table->asQuery(@keys);
@@ -77,8 +67,6 @@ ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
 
     use ServiceNow::SOAP;
     
-    my $sn = ServiceNow("https://mycompany.service-now.com", "soap.perl", $password);
-    # or
     my $sn = ServiceNow("mycompany", "soap.perl", $password);
     
     my $cmdb_ci_computer = $sn->table("cmdb_ci_computer");
