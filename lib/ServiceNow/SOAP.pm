@@ -153,7 +153,7 @@ The goals in implementing this Perl module were as follows.
 
 Provide an easy to use and performative method
 for querying large tables.
-Please refer to examples below of L<Query objects|/Query Methods>.
+Please refer to examples below of L<Query objects|/QUERY METHODS>.
 
 =item *
 
@@ -282,7 +282,7 @@ sub ServiceNow {
     return ServiceNow::SOAP::Session->new(@_);
 }
 
-=head1 Session Methods
+=head1 SESSION METHODS
 
 =head2 new
 
@@ -363,12 +363,43 @@ sub new {
     return $session;
 }
 
+=head2 connect
+
+=head3 Description
+
+Use of this function is optional, but sometimes you want to know up front
+whether your connection credentials are valid.
+This function tests them by attempting to get the user's profile
+from C<sys_user> using C<getRecords>, and trapping the error.
+If successful, the session object is returned.
+If unsuccessful, null is returned and the error message is in $@.
+
+=head3 Syntax
+
+    my $sn = ServiceNow($instancename, $username, $password)->connect()
+        or die "Unable to connect to $instancename: $@";
+
+=cut
+
+sub connect {
+    my $self = shift;
+    my $username = $self->{user};
+    my $user_tbl = $self->table('sys_user');
+    my @recs;
+    eval { @recs = $user_tbl->getRecords(username => $username) };
+    return 0 if $@;
+    return 0 unless scalar(@recs) == 1;
+    my $rec = $recs[0];
+    return 0 unless $rec->{user_name} eq $username;
+    return $self;
+}
+
 =head2 table
 
 =head3 Description
 
 Used to obtain a reference to a Table object.  
-The Table object is subsequently used for L</TABLE METHODS> described below.
+The Table object is subsequently used for L<TABLE METHODS|/TABLE METHODS> described below.
 
 =head3 Syntax
 
@@ -397,7 +428,7 @@ sub setTrace {
 
 =head3 Description
 
-Saves the session information to a file.  See L</loadSession> below.
+Saves the session information to a file.  See L<loadSession|/loadSession> below.
 
 =head3 Syntax
 
@@ -440,9 +471,9 @@ sub lookup {
     return $rec->{sys_id};
 }
 
-=head1 Table Methods
+=head1 TABLE METHODS
 
-Refer to L</table> above for instructions on obtaining a reference to a Table object.
+Refer to L<table|/table> function above for instructions on obtaining a reference to a Table object.
 
 =cut
 
@@ -1178,7 +1209,7 @@ sub getSchemaFields {
 
 package ServiceNow::SOAP::Query;
 
-=head1 Query Methods
+=head1 QUERY METHODS
 
 =head2 Description
 
