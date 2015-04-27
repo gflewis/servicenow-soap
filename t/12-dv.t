@@ -2,8 +2,8 @@ use strict;
 use TestUtil;
 use Test::More;
 use ServiceNow::SOAP;
+if (TestUtil::config) { plan tests => 9 } else { plan skip_all => "no config" };
 
-unless (TestUtil::config) { plan skip_all => "no config" };
 my $sn = TestUtil::getSession();
 my $sys_user = $sn->table("sys_user");
 
@@ -27,7 +27,5 @@ my $grpRec3 = $sys_user_group->setDV("all")->get($grpId);
 ok($grpRec3->{dv_manager} eq $grpMgrName, "setDV('all')");
 my $grpRec4 = $sys_user_group->setDV(0)->get($grpId);
 ok($grpRec4->{manager} eq $grpMgrId, "setDV(0)");
-
-done_testing();
 
 1;
