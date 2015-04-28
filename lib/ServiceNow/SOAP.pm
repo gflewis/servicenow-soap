@@ -39,22 +39,19 @@ ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
     # return a list of sys_ids
     my @keys = $table->getKeys(%parameters);
     
-    # return a reference to a hash
+    # return a single record as a hash
     my $rec = $table->get(sys_id => $sys_id);
     
-    # return a list of references to hashes
+    # return a set of records as an array of hashes
     my @recs = $table->getRecords(%parameters);
 
     # call getKeys and return a query object
-    my $query = $table->query(%parameters);
-    
-    # convert a list of keys into a query object
-    my $query = $table->asQuery(@keys);
+    my $qry = $table->query(%parameters);
     
     # fetch the next chunk of records
-    my @recs = $query->fetch($numrecs);
+    my @recs = $qry->fetch($numrecs);
 
-    # retrieve a record based on unique key other than sys_id
+    # retrieve a record based on a unique key other than sys_id
     my $rec = $table->getRecord($name => $value);
     
     # insert a record
@@ -73,8 +70,8 @@ ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
 
     # retrieve a small number of records     
     my @recs = $cmdb_ci_computer->getRecords(
-        sys_class_name => "cmdb_ci_computer", 
-        operational_status => 1,
+        "location.name" => "London", 
+        "operational_status" => "1",
         __order_by => "name", 
         __limit => 500);
     foreach my $rec (@recs) {
@@ -83,15 +80,14 @@ ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
     
     # count records
     my $count = $cmdb_ci_computer->count(
-        sys_class_name => "cmdb_ci_computer",
-        operational_status => 1);
+        "location.name" => "London", 
+        "operational_status" => "1");
     
     # retrieve records in chunks 
-    my @keys = $cmdb_ci_computer->getKeys(
-        sys_class_name => "cmdb_ci_computer",
-        operational_status => 1,
+    my $qry = $cmdb_ci_computer->query(
+        "location.name" => "London", 
+        "operational_status" => "1",
         __order_by => "name");
-    my $qry = $cmdb_ci_computer->asQuery(@keys);    
     while (@recs = $qry->fetch(200)) {
         foreach my $rec (@recs) {
             print $rec->{name}, "\n";
@@ -272,7 +268,7 @@ sub connect {
 
 =head3 Description
 
-Used to obtain a reference to a Table object.  
+Used to obtain a Table object.  
 The Table object is subsequently used for L<TABLE METHODS|/TABLE METHODS> described below.
 
 =head3 Syntax
@@ -529,7 +525,7 @@ sub getKeys {
 
 =head3 Description
 
-Returns a list of records. Actually, it returns a list of hash references.
+Returns a list of records. Actually, it returns a list of hashes.
 
 For additional information on available parameters
 refer to the ServiceNow documentation on the B<getRecords> Direct SOAP API method at
@@ -656,6 +652,8 @@ sub count {
 =head3 Description
 
 Inserts a record.
+In a scalar context, this function returns a sys_id only.
+In a list context, this function returns a list of name/value pairs.
 
 =head3 Syntax
 
@@ -665,19 +663,25 @@ Inserts a record.
 =head3 Examples
 
     my $incident = $sn->table("incident");
-    
+
+In a scalar context, the function returns a sys_id.
+
     my $sys_id = $incident->insert(
         short_description => $short_description,
         assignment_group => "Network Support",
         impact => 3);
     print "sys_id=", $sys_id, "\n";
-    
+
+In a list context, the function returns a list of name/value pairs.
+
     my %result = $incident->insert(
         short_description => $short_description,
         assignment_group => "Network Support",
         impact => 3);
     print "number=", $result{number}, "\n";
     print "sys_id=", $result{sys_id}, "\n";
+
+You can also call it this way.
 
     my %rec;
     $rec{short_description} = $short_description;
@@ -699,7 +703,7 @@ sub insert {
     my $response = $som->body->{insertResponse};
     my $sysid = $response->{sys_id};
     $self->traceAfter($sysid);
-    return wantarray ? @{$response} : $sysid;
+    return wantarray ? %{$response} : $sysid;
 }
 
 =head2 update
@@ -719,6 +723,8 @@ If the second syntax is used, then the C<sys_id>
 must be the first parameter.
 
 =head3 Examples
+
+The following three examples are equivalent.
 
     $incident->update(
         sys_id => $sys_id, 
@@ -780,6 +786,8 @@ sub deleteRecord {
 
 =head3 Description
 
+This function creates a new Query object
+by calling L<getKeys|/getKeys>
 =head3 Syntax
 
 =head3 Example
@@ -789,12 +797,10 @@ sub deleteRecord {
 sub query {
     my $self = shift;
     my $query = ServiceNow::SOAP::Query->new($self);
-    my @keys;
-    my %params;
-    @keys = $self->getKeys(@_);
+    my @keys = $self->getKeys(@_);
     # parameters which affect order or columns must be preserved
     # so that they can be passed to getRecords
-    %params = @_;
+    my %params = @_;
     for my $k (keys %params) {
         delete $params{$k} unless $k =~ /^(__order|__exclude|__use_view)/;
     }
@@ -807,12 +813,11 @@ sub query {
 
 =head2 asQuery
 
-
 =head3 Description
 
-Creates a new Query object from a list of keys.
-Note that since a Query object is essentially just a list of key,
-this method simply makes a copy of the list.
+This function creates a new Query object from a list of keys.
+It does not make any Web Services calls.
+It simply makes a copy of the list.
 Each item in the list must be a sys_id for the respective table.
 
 =head3 Syntax
@@ -845,15 +850,8 @@ sub asQuery {
 If you are using Perl to create incident tickets,
 then you may have a requirement to attach files to those tickets.
 
-This function requires write access to the C<ecc_queue>
+This function requires insert permissions on the C<ecc_queue>
 table in ServiceNow.
-
-When you attach a file to a ServiceNow record,
-you can specify an attachment name
-which is different from the actual file name.
-If no attachment name is specified,
-this function will
-assume that the attachment name is the same as the file name.
 
 You will need to specify a MIME type.
 If no type is specified,
@@ -861,49 +859,61 @@ this function will use a default type of "text/plain"
 For a list of MIME types, refer to 
 L<http://en.wikipedia.org/wiki/Internet_media_type>.
 
+When you attach a file to a ServiceNow record,
+you can also specify an attachment name
+which is different from the actual file name.
+If no attachment name is specified,
+this function will
+assume that the attachment name is the same as the file name.
+
+This function will die if the file cannot be read.
+
 =head3 Syntax
 
-    $table->attachFile($sys_id, $filename, $attachment_name, $mime_type);
+    $table->attachFile($sys_id, $filename, $mime_type, $attachment_name);
 
 =head3 Example
 
-    $incident->attachFile($sys_id, "screenshot.png", "", "image/png");
+    $incident->attachFile($sys_id, "screenshot.png", "image/png");
     
 =cut
 
 sub attachFile {
     my $self = shift;
-    my ($sysid, $filename, $attachname, $mimetype) = @_;
-    $self->traceMessage("attachFile?", $sysid, $filename);
+    my ($sysid, $filename, $mimetype, $attachname) = @_;
     Carp::croak "attachFile: No such record" unless $self->get($sysid);
-    $attachname = $filename unless $attachname;
     $mimetype = "text/plain" unless $mimetype;
-    die "Unable to read file \"$filename\"" unless -r $filename;
-    my $ecc_queue = $self->{session}->table("ecc_queue");
+    $attachname = $filename unless $attachname;
+    Carp::croak "Unable to read file \"$filename\"" unless -r $filename;
+    my $session = $self->{session};
+    my $ecc_queue = $self->{ecc_queue} ||
+        ($self->{ecc_queue} = $session->table('ecc_queue'));
     open(FILE, $filename) or die "Unable to open \"$filename\"\n$!";
     my ($buf, $base64);
     # encode in multiples of 57 bytes to ensure no padding in the middle
     while (read(FILE, $buf, 60*57)) {
         $base64 .= MIME::Base64::encode_base64($buf);
     }
+    close FILE;
     my $tablename = $self->{name};
-    $ecc_queue->insert(
-        topic => "AttachmentCreator",
+    my $sysid = $ecc_queue->insert(
+        topic => 'AttachmentCreator',
         name => "$attachname:$mimetype",
         source => "$tablename:$sysid",
         payload => $base64
     );
+    die "attachFile failed" unless $sysid;
 }
 
 =head2 getVariables
 
 =head3 Description
 
-This function returns a list of the variables attached to a Requested Item (RITM).
+This function returns a list of hashes 
+of the variables attached to a Requested Item (RITM).
 
 B<Note>: This function currently works only for the C<sc_req_item> table.
 
-Each item in the list is a reference to a hash.
 Each hash contains the following four fields:
 
 =over
@@ -915,6 +925,11 @@ name - Name of the variable.
 =item *
 
 question - The question text.
+
+=item *
+
+reference - If the variable is a reference, then the name of the table.
+Otherwise blank.
 
 =item *
 
@@ -935,9 +950,9 @@ order - Order (useful for sorting).
 =head3 Example
 
     my $sc_req_item = $sn->table("sc_req_item");
-    my $ritm = $sc_req_item->getRecord(number => $ritm_number);
-    my @vars = $sc_req_item->getVariables($ritm->{sys_id});
-    foreach my $var (@vars) {
+    my $ritmRec = $sc_req_item->getRecord(number => $ritm_number);
+    my @vars = $sc_req_item->getVariables($ritmRec->{sys_id});
+    foreach my $var (sort { $a->{order} <=> $b->{order} } @vars) {
         print "$var->{name} = $var->{value}\n";
     }
 
@@ -949,9 +964,12 @@ sub getVariables {
     my $sysid = shift;
     Carp::croak "getVariables: invalid sys_id: $sysid" unless _isGUID($sysid);
     my $session = $self->{session};
-    my $sc_item_option = $session->table('sc_item_option');
-    my $sc_item_option_mtom = $session->table('sc_item_option_mtom');
-    my $item_option_new = $session->table('item_option_new');
+    my $sc_item_option = $self->{sc_item_option} ||
+        ($self->{sc_item_option} = $session->table('sc_item_option'));
+    my $sc_item_option_mtom = $self->{sc_item_option_mtom} ||
+        ($self->{sc_item_option_mtom} = $session->table('sc_item_option_mtom'));
+    my $item_option_new = $self->{item_option_new} ||
+        ($self->{item_option_new} = $session->table('item_option_new'));
     my @vmtom = $sc_item_option_mtom->getRecords('request_item', $sysid);
     my $vrefkeys = join ',', map { $_->{sc_item_option} } @vmtom;
     my @vref = $sc_item_option->getRecords('sys_idIN' . $vrefkeys);
@@ -963,10 +981,11 @@ sub getVariables {
         next unless _isGUID($v->{item_option_new});
         my $n = $vvalhash{$v->{item_option_new}};
         my $var = {
-            name     => $n->{name},
-            question => $n->{question_text},
-            value    => $v->{value},
-            order    => $v->{order}
+            name      => $n->{name},
+            reference => $n->{reference},
+            question  => $n->{question_text},
+            value     => $v->{value},
+            order     => $n->{order}
         };
         push @result, $var;
     }
@@ -978,7 +997,9 @@ sub getVariables {
 =head3 Description
 
 Used to enable (or disable) display values in queries.
-All subsequent calls to L</get>, L</getRecords> or L</getRecord> for this table will be affected.
+All subsequent calls to L<get|/get>, L<getRecords|/getRecords> 
+or L<getRecord|/getRecord> 
+for this table will be affected.
 This function returns the modified Table object.
 
 For additional information regarding display values refer to
@@ -988,8 +1009,7 @@ L<http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_
 
     $table->setDV("true");
     $table->setDV("all");
-    $table->setDV(1);  # same as "all"
-    $table->setDv(0);  # restore default setting
+    $table->setDv("");  # restore default setting
 
 =head3 Examples
 
@@ -1005,7 +1025,7 @@ L<http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_
 
 sub setDV {
     my ($self, $dv) = @_;
-    $dv = 'all' if $dv eq '1';
+    $dv = 'true' if $dv eq '1';
     $self->{dv} = $dv;
     return $self;
 }
@@ -1252,7 +1272,8 @@ sub fetch {
 
 =head3 Description
 
-Fetch all the records in a Query by calling L</fetch> repeatedly.
+Fetch all the records in a Query by calling L<fetch|/fetch> repeatedly
+until there are no more records.
 
 =head3 Syntax
 
@@ -1262,7 +1283,7 @@ Fetch all the records in a Query by calling L</fetch> repeatedly.
 =head3 Example
 
 This example prints the names of all active users.
-Each call to L</getRecords> returns up to 200 users
+Each call to L<getRecords|/getRecords> returns up to 200 users
 since no chunk size was specified and the default is 200.
 
     my @recs = $sn->table("sys_user")->query(active => "true", __order_by => "name")->fetchAll();

@@ -25,7 +25,7 @@ ok($grpRec2, "grpRec2 retrieved");
 ok($grpRec2->{manager} eq $grpMgrName, "setDV('true')");
 my $grpRec3 = $sys_user_group->setDV("all")->get($grpId);
 ok($grpRec3->{dv_manager} eq $grpMgrName, "setDV('all')");
-my $grpRec4 = $sys_user_group->setDV(0)->get($grpId);
-ok($grpRec4->{manager} eq $grpMgrId, "setDV(0)");
+my $grpRec4 = $sys_user_group->setDV("")->get($grpId);
+ok($grpRec4->{manager} eq $grpMgrId, "setDV('')");
 
 1;

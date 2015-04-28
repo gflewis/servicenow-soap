@@ -5,29 +5,34 @@ use ServiceNow::SOAP;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT = qw(ServiceNow);
+our @EXPORT = qw(config getProp);
 
 my $configfile = "test.config";
-our %config;
+our $config;
 
 sub config {
     unless (-f $configfile) { return undef };
     do $configfile;
-    return \%config;
+    return $config;
 };
 
+sub getProp {
+    my $name = shift;
+    return $config->{$name};
+}
+
 sub getInstance {
-    return $config{instance};
+    return $config->{instance};
 }
 
 sub getUsername {
-    return $config{username};
+    return $config->{username};
 }
 
 sub getSession {
-    my $instance = $config{instance};
-    my $user = $config{username};
-    my $pass = $config{password};
+    my $instance = $config->{instance};
+    my $user = $config->{username};
+    my $pass = $config->{password};
     return ServiceNow($instance, $user, $pass, 1);    
 }
 
