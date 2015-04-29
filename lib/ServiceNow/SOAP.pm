@@ -1050,10 +1050,24 @@ sub setChunk {
     return $self;
 }
 
+=head1 setTimeout
+
+=head2 Description
+
+Set the value of the SOAP Web Services client HTTP timeout.
+In addition, you may need to increase the ServiceNow system property
+C<glide.soap.request_processing_timeout>.
+    
+=head2 syntax
+
+    $table->setTimeout($seconds);
+    
+=cut
+
 sub setTimeout {
-    my ($self, $timeout) = @_;
-	$timeout = 180 unless defined($timeout) && $timeout =~ /\d+/;
-	$self->{client}->transport()->timeout($timeout);
+    my ($self, $seconds) = @_;
+	$seconds = 180 unless defined($seconds) && $seconds =~ /\d+/;
+	$self->{client}->transport()->timeout($seconds);
 	return $self;
 }
 
