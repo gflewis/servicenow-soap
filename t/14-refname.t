@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 use TestUtil;
 use Test::More;
 use ServiceNow::SOAP;
@@ -7,7 +8,7 @@ use ServiceNow::SOAP;
 
 my $locationName;
 if (TestUtil::config) {
-    $locationName = TestUtil::config->{location_name};
+    $locationName = getProp(location_name);
     # print "location=$locationName\n";
     if ($locationName) {
         plan tests => 1;

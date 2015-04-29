@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 use TestUtil;
 use Test::More;
 use ServiceNow::SOAP;

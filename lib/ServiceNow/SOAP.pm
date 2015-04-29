@@ -13,10 +13,11 @@ use LWP::UserAgent;
 use HTTP::Cookies;
 use MIME::Base64;
 use XML::Simple;
+use Time::HiRes;
 use Carp;
-use Data::Dumper;
-$Data::Dumper::Indent=1;
-$Data::Dumper::Sortkeys=1;
+# use Data::Dumper;
+# $Data::Dumper::Indent=1;
+# $Data::Dumper::Sortkeys=1;
 
 our $DEFAULT_CHUNK = 200;
 our $DEFAULT_DV = 0;
@@ -423,6 +424,8 @@ sub callMethod {
     return $som;
 }
 
+our $startTime;
+
 sub traceBefore {
     my ($self, $methodname) = @_;
     my $trace = $self->{trace};
@@ -430,20 +433,26 @@ sub traceBefore {
     my $tablename = $self->{name};
     $| = 1;
     print "$tablename $methodname...";
-    print "\n" if $trace > 1;
+    $startTime = Time::HiRes::time();
+}
+
+sub traceAfterContent {
+    my $self = shift;
+    my $content = shift;
+    my $trace = $self->{trace};
+    return unless $trace;
+    my $finishTime = Time::HiRes::time();
+    my $elapsed = $finishTime - $startTime;
+    print sprintf(" %.2fs ", $elapsed), @_, "\n";
+    if ($trace > 1) {
+        $content = $self->{client}->transport()->http_response()->content() unless $content;
+        print $content, "\n";
+    }
 }
 
 sub traceAfter {
     my $self = shift;
-    my $trace = $self->{trace};
-    return unless $trace;
-    if ($trace > 1) {
-        print $self->{client}->transport()->http_response()->content(),"\n";
-        print "... ", @_, "\n";
-    }
-    else {
-        print " ", @_, "\n";
-    }
+    $self->traceAfterContent('', @_);
 }
 
 =head2 get
@@ -477,7 +486,7 @@ sub get {
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     $self->traceBefore('get');
     my $som = $self->callMethod('get' => _soapParams(@_));
-    $self->traceAfter('ok');
+    $self->traceAfter();
     Carp::croak $som->faultdetail if $som->fault;
     my $result = $som->body->{getResponse};
     return $result;
@@ -640,10 +649,10 @@ sub count {
     my $self = shift;
     my @params = (SOAP::Data->name(COUNT => 'sys_id'));
     push @params, _soapParams(@_) if @_;
-    $self->traceBefore('aggregate COUNT');
+    $self->traceBefore('aggregate count');
     my $som = $self->callMethod('aggregate' => @params);
     my $count = $som->body->{aggregateResponse}->{aggregateResult}->{COUNT};
-    $self->traceAfter($count);
+    $self->traceAfter("count=$count");
     return $count;
 }
 
@@ -702,7 +711,7 @@ sub insert {
     my $som = $self->callMethod('insert' => _soapParams(@_));
     my $response = $som->body->{insertResponse};
     my $sysid = $response->{sys_id};
-    $self->traceAfter($sysid);
+    $self->traceAfter();
     return wantarray ? %{$response} : $sysid;
 }
 
@@ -754,7 +763,7 @@ sub update {
     my $sysid = $values{sys_id};
     $self->traceBefore("update $sysid");
     my $som = $self->callMethod('update' => _soapParams(@_));
-    $self->traceAfter('ok');
+    $self->traceAfter();
     return $self;
 }
 
@@ -778,7 +787,7 @@ sub deleteRecord {
     my $sysid = $values{sys_id};
     $self->traceBefore("delete $sysid");
     my $som = $self->callMethod('delete' => _soapParams(@_));
-    $self->traceAfter('ok');
+    $self->traceAfter();
     return $self;
 }
 
@@ -1025,7 +1034,6 @@ L<http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_
 
 sub setDV {
     my ($self, $dv) = @_;
-    $dv = 'true' if $dv eq '1';
     $self->{dv} = $dv;
     return $self;
 }
@@ -1033,8 +1041,6 @@ sub setDV {
 sub setTrace {
     my ($self, $trace) = @_;
     $self->{trace} = $trace;
-    # $self->{client}->import(+trace => 'debug') if $trace >= 2;
-    # $self->{client}->import(+trace => '-debug') if $trace == 0;
     return $self;
 }
 
@@ -1047,9 +1053,7 @@ sub setChunk {
 sub setTimeout {
     my ($self, $timeout) = @_;
 	$timeout = 180 unless defined($timeout) && $timeout =~ /\d+/;
-	my $oldTimeout = $self->{client}->transport()->timeout();
 	$self->{client}->transport()->timeout($timeout);
-	$self->traceMessage('setTimeout', "changed from $oldTimeout to $timeout");
 	return $self;
 }
 
@@ -1064,14 +1068,16 @@ sub getSchema {
     my $useragent = LWP::UserAgent->new();
     $useragent->credentials("$host:443", "Service-now", $user, $pass);
     my $tablename = $self->{name};
+    $self->traceBefore('wsdl');
     my $response = $useragent->get("$baseurl/$tablename.do?WSDL");
     die $response->status_line unless $response->is_success;
+    $self->traceAfterContent($response->content);
     my $wsdl = XML::Simple::XMLin($response->content);
     $self->{wsdl} = $wsdl;
     return $wsdl;
 }
 
-=head2 getSchemaFields
+=head2 getFields
 
 =head3 Description
 
@@ -1081,27 +1087,43 @@ The hash value is the field type.
 
 =head3 Syntax
 
-    %fields = $table->getSchemaFields($type);
+    %fields = $table->getFields($type);
     
 =head3 Example
 
-    my %fields = $sn->table("sys_user_group")->getSchemaFields("getRecordsResponse");
+    my %fields = $sn->table("sys_user_group")->getFields("getRecordsResponse");
     foreach my $name (sort keys %fields) {
         print "name=$name type=$fields{$name}\n";
     }
 
 =cut
 
-sub getSchemaFields {
+sub getFields {
     my ($self, $schematype) = @_;
     my $wsdl = $self->getSchema();
+    my $schematype = 'getResponse' unless $schematype;
     my $elements = $wsdl->{'wsdl:types'}{'xsd:schema'}{'xsd:element'}{$schematype}
-        {'xsd:complexType'}{'xsd:sequence'}{'xsd:element'}
         {'xsd:complexType'}{'xsd:sequence'}{'xsd:element'};
     my %result = map { $_ => $elements->{$_}{'type'} } keys %{$elements};
     return %result;
 }
 
+sub getColumns {
+    my $self = shift;
+    return @{$self->{columns}} if $self->{columns};
+    my %fields = $self->getFields();
+    my @columns = sort keys %fields;
+    $self->{columns} = \@columns;
+    return @columns;
+}
+
+sub getExcluded {
+    my $self = shift;
+    my %names = map { $_ => 1 } @_;
+    my @result = grep { !$names{$_} } $self->getColumns();
+    return @result;
+}
+    
 package ServiceNow::SOAP::Query;
 
 =head1 QUERY METHODS
@@ -1260,6 +1282,7 @@ sub fetch {
         my $table = $self->{table};
         my $last = $first + $chunk - 1;
         my %params = %{$self->{params}};
+        $params{__limit} = $chunk if $chunk;
         $last = $count - 1 if $last >= $count;
         my $encodedquery = "sys_idIN" . join(",", @{$self->{keys}}[$first .. $last]);
         @result = $table->getRecords(__encoded_query => $encodedquery, %params);
@@ -1303,9 +1326,28 @@ sub fetchAll {
     return @result;    
 }
 
+=head2 setColumns
+
+Restrict the list of columns that will be returned 
+=head3 Description
+
+=head3 Syntax
+
+=head3 Example
+
+=cut
+
+sub setColumns {
+    my $self = shift;
+    my $table = $self->{table};
+    my @exclude = $table->getExcluded(split /,/, join(',', @_));
+    $self->{params}{__exclude_columns} = join(',', @exclude);
+    return $self;
+}
+
 sub setChunk {
     my $self = shift;
-    $self->{chunk} = shift;
+    $self->{chunk} = shift || $DEFAULT_CHUNK;
     return $self;
 }
 

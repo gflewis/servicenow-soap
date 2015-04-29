@@ -1,11 +1,22 @@
 use strict;
-use TestUtil;
-use Test::More;
+use warnings;
 use ServiceNow::SOAP;
+use Test::More;
+use TestUtil;
 
 # This script tests insert, update, attachFile and deleteRecord
 
-if (TestUtil::config) { plan tests => 8 } else { plan skip_all => "no config" };
+if (TestUtil::config) {
+    if (getProp('test_insert')) {
+        plan tests => 8;
+    }
+    else {
+        plan skip_all => "test_insert is false";
+    }
+}
+else {
+    plan skip_all => "no config";
+}
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 my $timestamp =  

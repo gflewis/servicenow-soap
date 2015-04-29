@@ -30,10 +30,11 @@ sub getUsername {
 }
 
 sub getSession {
+    my $trace = defined $_[0] ? $_[0] : 1;
     my $instance = $config->{instance};
     my $user = $config->{username};
     my $pass = $config->{password};
-    return ServiceNow($instance, $user, $pass, 1);    
+    return ServiceNow($instance, $user, $pass, $trace);    
 }
 
 sub isGUID { 

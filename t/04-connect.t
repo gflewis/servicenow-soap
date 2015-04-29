@@ -9,7 +9,7 @@ my $user = TestUtil::config->{username};
 my $pass = TestUtil::config->{password};
 BAIL_OUT "not initialized" unless $instance;
 
-my $sn = ServiceNow($instance, $user, $pass, 1);
+my $sn = ServiceNow($instance, $user, $pass, 2);
 my $sys_user = $sn->table("sys_user");
 ok ($sys_user, "table method appears to work");
 my $userrec = $sys_user->getRecord(user_name => $user);
