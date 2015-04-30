@@ -894,6 +894,13 @@
 
 <h3 id="Example12">Example</h3>
 
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$tbl</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">()-&gt;</span><span class="variable">setColumns</span><span class="operator">(</span><span class="string">qw(
+        sys_id name sys_class_name 
+        operational_status sys_updated_on)</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$qry</span><span class="operator">-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>    
+</code></code></pre>
+
 <h1 id="AUTHOR">AUTHOR</h1>
 
 <p>Giles Lewis</p>
