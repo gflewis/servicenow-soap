@@ -24,7 +24,6 @@
           <li><a href="#Description">Description</a></li>
           <li><a href="#Syntax">Syntax</a></li>
           <li><a href="#Examples">Examples</a></li>
-          <li><a href="#Usage-Notes">Usage Notes</a></li>
         </ul>
       </li>
       <li><a href="#connect">connect</a>
@@ -96,7 +95,6 @@
           <li><a href="#Description10">Description</a></li>
           <li><a href="#Syntax10">Syntax</a></li>
           <li><a href="#Examples3">Examples</a></li>
-          <li><a href="#Usage-Notes1">Usage Notes</a></li>
         </ul>
       </li>
       <li><a href="#update">update</a>
@@ -104,7 +102,6 @@
           <li><a href="#Description11">Description</a></li>
           <li><a href="#Syntax11">Syntax</a></li>
           <li><a href="#Examples4">Examples</a></li>
-          <li><a href="#Usage-Notes2">Usage Notes</a></li>
         </ul>
       </li>
       <li><a href="#deleteRecord">deleteRecord</a>
@@ -165,7 +162,6 @@
   </li>
   <li><a href="#QUERY-METHODS">QUERY METHODS</a>
     <ul>
-      <li><a href="#Background">Background</a></li>
       <li><a href="#Description20">Description</a></li>
       <li><a href="#Example9">Example</a></li>
       <li><a href="#fetch">fetch</a>
@@ -184,6 +180,7 @@
       </li>
       <li><a href="#setColumns">setColumns</a>
         <ul>
+          <li><a href="#Description23">Description</a></li>
           <li><a href="#Syntax21">Syntax</a></li>
           <li><a href="#Example12">Example</a></li>
         </ul>
@@ -191,9 +188,9 @@
     </ul>
   </li>
   <li><a href="#AUTHOR">AUTHOR</a></li>
-  <li><a href="#MAINTAINER">MAINTAINER</a></li>
-  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+  <li><a href="#ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</a></li>
   <li><a href="#LICENSE">LICENSE</a></li>
+  <li><a href="#POD-ERRORS">POD ERRORS</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
@@ -242,10 +239,10 @@
     
     <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"mycompany"</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
     
-    <span class="keyword">my</span> <span class="variable">$cmdb_ci_computer</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$computer_tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
     
     <span class="comment"># retrieve a small number of records     </span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$cmdb_ci_computer</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span>
+    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span>
         <span class="string">"location.name"</span> <span class="operator">=&gt;</span> <span class="string">"London"</span><span class="operator">,</span> 
         <span class="string">"operational_status"</span> <span class="operator">=&gt;</span> <span class="string">"1"</span><span class="operator">,</span>
         <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">,</span> 
@@ -255,12 +252,12 @@
     <span class="operator">}</span>
     
     <span class="comment"># count records</span>
-    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$cmdb_ci_computer</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span>
+    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span>
         <span class="string">"location.name"</span> <span class="operator">=&gt;</span> <span class="string">"London"</span><span class="operator">,</span> 
         <span class="string">"operational_status"</span> <span class="operator">=&gt;</span> <span class="string">"1"</span><span class="operator">);</span>
     
     <span class="comment"># retrieve records in chunks </span>
-    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$cmdb_ci_computer</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span>
+    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span>
         <span class="string">"location.name"</span> <span class="operator">=&gt;</span> <span class="string">"London"</span><span class="operator">,</span> 
         <span class="string">"operational_status"</span> <span class="operator">=&gt;</span> <span class="string">"1"</span><span class="operator">,</span>
         <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">);</span>
@@ -271,25 +268,25 @@
     <span class="operator">}</span>
     
     <span class="comment"># retrieve all the records in a large table </span>
-    <span class="keyword">my</span> <span class="variable">$recs</span> <span class="operator">=</span> <span class="variable">$cmdb_ci_computer</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">()-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
+    <span class="keyword">my</span> <span class="variable">$recs</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">()-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
     
     <span class="comment"># insert a record</span>
-    <span class="keyword">my</span> <span class="variable">$incident</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span>
+    <span class="keyword">my</span> <span class="variable">$incident_tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span>
         <span class="string">assignment_group</span> <span class="operator">=&gt;</span> <span class="string">"Network Support"</span><span class="operator">,</span>
         <span class="string">short_description</span> <span class="operator">=&gt;</span> <span class="variable">$short_description</span><span class="operator">,</span>
         <span class="string">impact</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
     
     <span class="comment"># retrieve a single record based on sys_id</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">);</span>
     <span class="keyword">print</span> <span class="string">"number="</span><span class="operator">,</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">number</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
     
     <span class="comment"># retrieve a single record based on number</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">number</span> <span class="operator">=&gt;</span> <span class="variable">$number</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">number</span> <span class="operator">=&gt;</span> <span class="variable">$number</span><span class="operator">);</span>
     <span class="keyword">print</span> <span class="string">"sys_id="</span><span class="operator">,</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">sys_id</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
     
     <span class="comment"># update a record</span>
-    <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span>
+    <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span>
         <span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">,</span>
         <span class="string">assigned_to</span> <span class="operator">=&gt;</span> <span class="string">"Fred Luddy"</span><span class="operator">,</span>
         <span class="string">incident_state</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
@@ -297,7 +294,22 @@
 
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
 
-<p>This module is a second generation Perl API for ServiceNow. It incorporates what I have learned over several years of accessing ServiceNow via the Web Services API, and also what I have learned by studying the ServiceNow::Simple API written by Greg George.</p>
+<p>This module is a second generation Perl API for ServiceNow built on top of SOAP::Lite.</p>
+
+<p>Features of this module include:</p>
+
+<ul>
+
+<li><p>Simplified API which closely mirrors ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API">Direct Web Services API</a>.</p>
+
+</li>
+<li><p>Efficient and easy to use methods for reading large tables. Please see to <a href="#QUERY-METHODS">&quot;QUERY METHODS&quot;</a> below. These methods overcome ServiceNow&#39;s built-in limitation of 250 records per SOAP Web Services call, and adhere to ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">best practice recommendations</a> for querying data through Web Services.</p>
+
+</li>
+<li><p>Specialized functions such as <a href="#attachFile">&quot;attachFile&quot;</a> and <a href="#getVariables">&quot;getVariables&quot;</a>.</p>
+
+</li>
+</ul>
 
 <h1 id="SESSION-METHODS">SESSION METHODS</h1>
 
@@ -307,7 +319,7 @@
 
 <p>Used to obtain a reference to an Session object. The Session object essentially holds the URL and connection credentials for your ServiceNow instance. The first argument is the URL or instance name. The second argument is the user name. The third argument is the password.</p>
 
-<p>The fourth (optional) argument to this method is a trace level which can be helpful for debugging. Sometimes, when you are developing a new script, it seems to hang at a certain point, and you just want to know what it is doing. Set the trace level to 1 to enable tracing messages for SOAP calls. Set the trace level to 2 to dump the complete XML of all SOAP results.</p>
+<p>The fourth (optional) argument to this method is an integer trace level which can be helpful for debugging. Sometimes, when you are developing a new script, it seems to hang at a certain point, and you just want to know what it is doing. Set the trace level to 1 to enable tracing messages for SOAP calls. Set the trace level to 2 to dump the complete XML of all SOAP results.</p>
 
 <h3 id="Syntax">Syntax</h3>
 
@@ -329,22 +341,6 @@
 <pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"mycompanydev"</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span>
 </code></code></pre>
 
-<h3 id="Usage-Notes">Usage Notes</h3>
-
-<p>If you are using this API for the first time, then you may want to verify connectivity by using an admin account in a <b>sub-production</b> instance.</p>
-
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"mycompanydev"</span><span class="operator">,</span> <span class="string">"admin"</span><span class="operator">,</span> <span class="variable">$adminpass</span><span class="operator">);</span>
-</code></code></pre>
-
-<p>However, once connectivity has been verified you should switch to a dedicated application account which has been granted the necessary access controls. For example, if you are not performing updates, you might create an account named <code><code>soap.perl</code></code> which only has <code><code>soap_query</code></code> role.</p>
-
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="variable">$instance</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
-</code></code></pre>
-
-<p>For security reasons you should never use an admin account to access a production ServiceNow instance via the Web Services API.</p>
-
-<p>For security reasons you should never embed a password in a perl script. Instead store the password in a configuration file where it can be easily updated when the password is rotated.</p>
-
 <h2 id="connect">connect</h2>
 
 <h3 id="Description1">Description</h3>
@@ -361,7 +357,7 @@
 
 <h3 id="Description2">Description</h3>
 
-<p>Used to obtain a Table object. The Table object is subsequently used for <a href="#TABLE-METHODS">TABLE METHODS</a> described below.</p>
+<p>Used to obtain a Table object. The Table object is subsequently used for <a href="#TABLE-METHODS">&quot;TABLE METHODS&quot;</a> described below.</p>
 
 <h3 id="Syntax2">Syntax</h3>
 
@@ -370,14 +366,14 @@
 
 <h3 id="Example">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$cmdb_ci_computer</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$computer_tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
 </code></code></pre>
 
 <h2 id="saveSession">saveSession</h2>
 
 <h3 id="Description3">Description</h3>
 
-<p>Saves the session information to a file. See <a href="#loadSession">loadSession</a> below.</p>
+<p>Saves the session information to a file. See <a href="#loadSession">&quot;loadSession&quot;</a>.</p>
 
 <h3 id="Syntax3">Syntax</h3>
 
@@ -397,7 +393,7 @@
 
 <h1 id="TABLE-METHODS">TABLE METHODS</h1>
 
-<p>Refer to <a href="#table">table</a> function above for instructions on obtaining a reference to a Table object.</p>
+<p>Refer to <a href="#table">&quot;table&quot;</a> function above for instructions on obtaining a reference to a Table object.</p>
 
 <h2 id="get">get</h2>
 
@@ -407,7 +403,7 @@
 
 <p>If no matching record is found then null is returned.</p>
 
-<p>For additional information refer to the ServiceNow documentation on the <b>get</b> Direct SOAP API method at <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#get">http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#get</a></p>
+<p>For additional information refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#get">&quot;get&quot; Direct SOAP API method</a>.</p>
 
 <h3 id="Syntax5">Syntax</h3>
 
@@ -427,7 +423,7 @@
 
 <p>Returns a list of keys. Note that this method returns a list of keys, <b>NOT</b> a comma delimited list.</p>
 
-<p>For additional information on available parameters refer to the ServiceNow documentation on the <b>getKeys</b> Direct SOAP API method at <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getKeys">http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getKeys</a></p>
+<p>For additional information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getKeys">&quot;getKeys&quot; Direct SOAP API method</a>.</p>
 
 <h3 id="Syntax6">Syntax</h3>
 
@@ -448,11 +444,11 @@
 
 <h3 id="Description7">Description</h3>
 
-<p>Returns a list of records. Actually, it returns a list of hashes.</p>
+<p>Returns a list of records. Actually, it returns a list of hashes. You may pass this function either a single encoded query, or a list of name/value pairs.</p>
 
-<p>For additional information on available parameters refer to the ServiceNow documentation on the <b>getRecords</b> Direct SOAP API method at <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getRecords">http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getRecords</a></p>
+<p>For additional information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getRecords">&quot;getRecords&quot; Direct SOAP API method</a>.</p>
 
-<p><b>Important Note</b>: This rmethod will return at most 250 records, unless you specify a <code><code>__limit</code></code> parameter as documented here: <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services">http://wiki.servicenow.com/index.php?title=Direct_Web_Services</a></p>
+<p><b>Important Note</b>: This method will return at most 250 records, unless you specify a <code><code>__limit</code></code> parameter as documented in the ServiceNow wiki under <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters">Extended Query Parameters</a>.</p>
 
 <h3 id="Syntax7">Syntax</h3>
 
@@ -474,7 +470,7 @@
 
 <h3 id="Description8">Description</h3>
 
-<p>Returns a single qualifying records. Return null if there are no qualifying records. Die if more than one record is returned.</p>
+<p>Returns a single qualifying records. Returns null if there are no qualifying records. Dies if there are multiple qualifying records.</p>
 
 <h3 id="Syntax8">Syntax</h3>
 
@@ -522,12 +518,12 @@
 
 <p>Count the total number of users:</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$sys_user</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">();</span>
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">)-&gt;</span><span class="variable">count</span><span class="operator">();</span>
 </code></code></pre>
 
 <p>Count the number of active users:</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$sys_user</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="string">active</span> <span class="operator">=&gt;</span> <span class="variable">true</span><span class="operator">);</span>
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">)-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="string">active</span> <span class="operator">=&gt;</span> <span class="variable">true</span><span class="operator">);</span>
 </code></code></pre>
 
 <h2 id="insert">insert</h2>
@@ -535,6 +531,8 @@
 <h3 id="Description10">Description</h3>
 
 <p>Inserts a record. In a scalar context, this function returns a sys_id only. In a list context, this function returns a list of name/value pairs.</p>
+
+<p>For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#insert">&quot;insert&quot; Direct SOAP API method</a>.</p>
 
 <h3 id="Syntax10">Syntax</h3>
 
@@ -566,7 +564,7 @@
     <span class="keyword">print</span> <span class="string">"sys_id="</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">{</span><span class="string">sys_id</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
 </code></code></pre>
 
-<p>You can also call it this way.</p>
+<p>You can also call it this way:</p>
 
 <pre><code><code>    <span class="keyword">my</span> <span class="variable">%rec</span><span class="operator">;</span>
     <span class="variable">$rec</span><span class="operator">{</span><span class="string">short_description</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">$short_description</span><span class="operator">;</span>
@@ -575,15 +573,13 @@
     <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="variable">%rec</span><span class="operator">);</span>
 </code></code></pre>
 
-<h3 id="Usage-Notes1">Usage Notes</h3>
-
-<p>For reference fields (e.g. assignment_group, assigned_to) you may pass in either a sys_id or a display value.</p>
+<p>Note that for reference fields (e.g. assignment_group, assigned_to) you may pass in either a sys_id or a display value.</p>
 
 <h2 id="update">update</h2>
 
 <h3 id="Description11">Description</h3>
 
-<p>Update a record.</p>
+<p>Updates a record. For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#update">&quot;update&quot; Direct SOAP API method</a>.</p>
 
 <h3 id="Syntax11">Syntax</h3>
 
@@ -592,6 +588,8 @@
 </code></code></pre>
 
 <p>Note: If the first syntax is used, then the <code><code>sys_id</code></code> must be included among the parameters. If the second syntax is used, then the <code><code>sys_id</code></code> must be the first parameter.</p>
+
+<p>For reference fields (e.g. assignment_group, assigned_to) you may pass in either a sys_id or a display value.</p>
 
 <h3 id="Examples4">Examples</h3>
 
@@ -612,15 +610,11 @@
         <span class="string">incident_state</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
 </code></code></pre>
 
-<h3 id="Usage-Notes2">Usage Notes</h3>
-
-<p>For reference fields (e.g. assignment_group, assigned_to) you may pass in either a sys_id or a display value.</p>
-
 <h2 id="deleteRecord">deleteRecord</h2>
 
 <h3 id="Description12">Description</h3>
 
-<p>Delete a record.</p>
+<p>Deletes a record. For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord">&quot;deleteRecord&quot; Direct SOAP API method</a>.</p>
 
 <h3 id="Syntax12">Syntax</h3>
 
@@ -632,7 +626,7 @@
 
 <h3 id="Description13">Description</h3>
 
-<p>This function creates a new Query object by calling <a href="#getKeys">getKeys</a>.</p>
+<p>This function creates a new Query object by calling <a href="#getKeys">&quot;getKeys&quot;</a>.</p>
 
 <h3 id="Syntax13">Syntax</h3>
 
@@ -644,7 +638,7 @@
 
 <p>The following example builds a list of all Incidents created between 1/1/2014 and 2/1/2014 sorted by creation date/time. The <code><code>fetchAll</code></code> method fetches chunks of records until all records have been retrieved.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$filter</span> <span class="operator">=</span> <span class="string">"sys_created_on&gt;=2014-01-01^sys_created_on&lt;2014-02-01"</span>
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$filter</span> <span class="operator">=</span> <span class="string">"sys_created_on&gt;=2014-01-01^sys_created_on&lt;2014-02-01"</span><span class="operator">;</span>
     <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">)-&gt;</span><span class="variable">query</span><span class="operator">(</span>
         <span class="string">__encoded_query</span> <span class="operator">=&gt;</span> <span class="variable">$filter</span><span class="operator">,</span>
         <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"sys_created_on);
@@ -665,12 +659,12 @@
 
 <h3 id="Example5">Example</h3>
 
-<p>In this example, assume that <code><code>@incRecs</code></code> contains an array of <code><code>incident</code></code> records from a previous query. We want to create an array of <code><code>sys_user_group</code></code> records for all referenced assignment groups. We use <code><code>map</code></code> to extract a list of assignment groups from the <code><code>incident</code></code> records, <code><code>grep</code></code> to discard the blanks, and <code><code>uniq</code></code> to discard the duplicates. The <code><code>grpKeys</code></code> array is then used to construct a new Query using <code><code>asQuery</code></code> and <code><code>fetchAll</code></code> is used to retrieve the records.</p>
+<p>In this example, we assume that <code><code>@incRecs</code></code> contains an array of <code><code>incident</code></code> records from a previous query. We need an array of <code><code>sys_user_group</code></code> records for all referenced assignment groups. We use <code><code>map</code></code> to extract a list of assignment group keys from the <code><code>@incRecs</code></code>; <code><code>grep</code></code> to discard the blanks; and <code><code>uniq</code></code> to discard the duplicates. <code><code>@grpKeys</code></code> contains the list of <code><code>sys_user_group</code></code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a> and <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
 
 <pre><code><code>    <span class="keyword">use</span> <span class="variable">List::MoreUtils</span> <span class="string">qw(uniq)</span><span class="operator">;</span>
     
     <span class="keyword">my</span> <span class="variable">@grpKeys</span> <span class="operator">=</span> <span class="variable">uniq</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="operator">!</span><span class="regex">/^$/</span> <span class="operator">}</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">assignment_group</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@incRecs</span><span class="operator">;</span>
-    <span class="keyword">my</span> <span class="variable">@grpRecs</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">'sys_user_group'</span><span class="operator">)-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@grpKeys</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
+    <span class="keyword">my</span> <span class="variable">@grpRecs</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user_group"</span><span class="operator">)-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@grpKeys</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
         
 </code></code></pre>
 
@@ -680,7 +674,7 @@
 
 <p>If you are using Perl to create incident tickets, then you may have a requirement to attach files to those tickets.</p>
 
-<p>This function requires insert permissions on the <code><code>ecc_queue</code></code> table in ServiceNow.</p>
+<p>This function implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The function requires insert permissions on the <code><code>ecc_queue</code></code> table.</p>
 
 <p>You will need to specify a MIME type. If no type is specified, this function will use a default type of &quot;text/plain&quot; For a list of MIME types, refer to <a href="http://en.wikipedia.org/wiki/Internet_media_type">http://en.wikipedia.org/wiki/Internet_media_type</a>.</p>
 
@@ -747,9 +741,9 @@
 
 <h3 id="Description17">Description</h3>
 
-<p>Used to enable (or disable) display values in queries. All subsequent calls to <a href="#get">get</a>, <a href="#getRecords">getRecords</a> or <a href="#getRecord">getRecord</a> for this table will be affected. This function returns the modified Table object.</p>
+<p>Used to enable (or disable) display values in queries. All subsequent calls to <a href="#get">&quot;get&quot;</a>, <a href="#getRecords">&quot;getRecords&quot;</a> or <a href="#getRecord">&quot;getRecord&quot;</a> for this table will be affected. This function returns the modified Table object.</p>
 
-<p>For additional information regarding display values refer to <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables">http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables</a></p>
+<p>For additional information regarding display values refer to the ServiceNow documentation on <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables">&quot;Return Display Value for Reference Variables&quot;</a></p>
 
 <h3 id="Syntax17">Syntax</h3>
 
@@ -801,40 +795,11 @@
 
 <h1 id="QUERY-METHODS">QUERY METHODS</h1>
 
-<h2 id="Background">Background</h2>
-
-<p>ServiceNow provides two mechanisms to query large tables using the Direct Web Services API.</p>
-
-<ol>
-
-<li><p>First row last row windowing. Specify the <code><code>__first_row</code></code> and <code><code>__last_row</code></code> parameter in each call to <code><code>getRecords</code></code> and gradually work your way through the table.</p>
-
-</li>
-<li><p>Get a complete list of keys up front by calling <code><code>getKeys</code></code>. Then read the records in chunks by passing in a slice of that array with each call to <code><code>getRecords</code></code>.</p>
-
-</li>
-</ol>
-
-<p>There are several reasons to prefer the 2nd approach.</p>
-
-<ul>
-
-<li><p>The performance of the first method degrades with the size of the table. As <code><code>__first_row</code></code> gets larger, each call to <code><code>getRecords</code></code> takes longer. For medium sized tables the first method is slower than the second. For very large tables the first method is completely unusable.</p>
-
-</li>
-<li><p>The first method can sometimes cause existing records to be skipped if new records are inserted while the retrieval process is running (<i>e.g.</i> if Discovery is running).</p>
-
-</li>
-<li><p>Given the inherent limitations of SOAP Web Services, it is a bad idea in general to try to read a lot of data without having some idea of how long it might take. If you are going to make a Web Service query up front to count the number of records, you might as well use that call instead to return a list of the keys.</p>
-
-</li>
-</ul>
-
 <h2 id="Description20">Description</h2>
 
-<p>A Query object is essentially a list of keys (sys_ids) to a particular table, and a pointer to the current position in that list.</p>
+<p>A Query object is essentially a list of keys (sys_ids) for a particular table, and a pointer to the current position in that list. Query objects and the related functions implement the ServiceNow best practice recommendations for using Web Services to query large tables as documented here: <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries</a>.</p>
 
-<p>To construct a new Query object use the <a href="#query">query</a> or <a href="#asQuery">asQuery</a> functions. <a href="#query">query</a> makes a Web Services call (<a href="#getKeys">getKeys</a>) to retrieve a list of keys. <a href="#asQuery">asQuery</a> simply converts an exsiting list of keys into a Query object.</p>
+<p>To construct a new Query object use the <a href="#query">&quot;query&quot;</a> or <a href="#asQuery">&quot;asQuery&quot;</a> Table Methods. <a href="#query">&quot;query&quot;</a> makes a Web Services call (<a href="#getKeys">&quot;getKeys&quot;</a>) to retrieve a list of keys. <a href="#asQuery">&quot;asQuery&quot;</a> simply converts an exsiting list of keys into a Query object.</p>
 
 <p>Once constructed, the <a href="#fetch">fetch</a> and <a href="#fetchAll">fetchAll</a> functions can be used to get the actual records in chunks.</p>
 
@@ -914,9 +879,19 @@
 
 <h2 id="setColumns">setColumns</h2>
 
-<p>Restrict the list of columns that will be returned =head3 Description</p>
+<h3 id="Description23">Description</h3>
+
+<p>Restricts the list of columns that will be returned.</p>
+
+<p>For some reason the Direct Web Services API allows you to specify a list of columns to be excluded from the query result, but there is no similar capability to specify a list of columns to be included. This function implements the more obviously needed behavior by inverting the list. It uses the WSDL to generate a list of columns returned by &lt;/getRecords&gt;, and subtracts the specified names to create an <code><code>&quot;__exclude_columns&quot;</code></code> extended query parameter.</p>
+
+<p>By restricting the results to the needed columns, it is possible to significantly reduce the time required for large queries.</p>
 
 <h3 id="Syntax21">Syntax</h3>
+
+<pre><code><code>    <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">setColumns</span><span class="operator">(</span><span class="variable">@list_of_columns</span><span class="operator">);</span>
+    <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">setColumns</span><span class="operator">(</span><span class="variable">$comma_delimited_list_of_columns</span><span class="operator">);</span>
+</code></code></pre>
 
 <h3 id="Example12">Example</h3>
 
@@ -924,9 +899,7 @@
 
 <p>Giles Lewis</p>
 
-<h1 id="MAINTAINER">MAINTAINER</h1>
-
-<h1 id="SEE-ALSO">SEE ALSO</h1>
+<h1 id="ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</h1>
 
 <h1 id="LICENSE">LICENSE</h1>
 
@@ -943,6 +916,26 @@
 <p>This license includes the non-exclusive, worldwide, free-of-charge patent license to make, have made, use, offer to sell, sell, import and otherwise transfer the Package with respect to any patent claims licensable by the Copyright Holder that are necessarily infringed by the Package. If you institute patent litigation (including a cross-claim or counterclaim) against any party alleging that the Package constitutes direct or contributory patent infringement, then this Artistic License to you shall terminate on the date that such litigation is filed.</p>
 
 <p>Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS &quot;AS IS&#39; AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+<h1 id="POD-ERRORS">POD ERRORS</h1>
+
+<p>Hey! <b>The above document had some coding errors, which are explained below:</b></p>
+
+<dl>
+
+<dt id="Around-line-129:">Around line 129:</dt>
+<dd>
+
+<p>&#39;=item&#39; outside of any &#39;=over&#39;</p>
+
+</dd>
+<dt id="Around-line-181:">Around line 181:</dt>
+<dd>
+
+<p>You forgot a &#39;=back&#39; before &#39;=head1&#39;</p>
+
+</dd>
+</dl>
 
 
 </body>
