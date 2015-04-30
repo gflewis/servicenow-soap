@@ -116,34 +116,35 @@
       <li><a href="#query">query</a>
         <ul>
           <li><a href="#Description13">Description</a></li>
+          <li><a href="#Syntax13">Syntax</a></li>
           <li><a href="#Example4">Example</a></li>
         </ul>
       </li>
       <li><a href="#asQuery">asQuery</a>
         <ul>
           <li><a href="#Description14">Description</a></li>
-          <li><a href="#Syntax13">Syntax</a></li>
+          <li><a href="#Syntax14">Syntax</a></li>
           <li><a href="#Example5">Example</a></li>
         </ul>
       </li>
       <li><a href="#attachFile">attachFile</a>
         <ul>
           <li><a href="#Description15">Description</a></li>
-          <li><a href="#Syntax14">Syntax</a></li>
+          <li><a href="#Syntax15">Syntax</a></li>
           <li><a href="#Example6">Example</a></li>
         </ul>
       </li>
       <li><a href="#getVariables">getVariables</a>
         <ul>
           <li><a href="#Description16">Description</a></li>
-          <li><a href="#Syntax15">Syntax</a></li>
+          <li><a href="#Syntax16">Syntax</a></li>
           <li><a href="#Example7">Example</a></li>
         </ul>
       </li>
       <li><a href="#setDV">setDV</a>
         <ul>
           <li><a href="#Description17">Description</a></li>
-          <li><a href="#Syntax16">Syntax</a></li>
+          <li><a href="#Syntax17">Syntax</a></li>
           <li><a href="#Examples5">Examples</a></li>
         </ul>
       </li>
@@ -156,7 +157,7 @@
       <li><a href="#getFields">getFields</a>
         <ul>
           <li><a href="#Description19">Description</a></li>
-          <li><a href="#Syntax17">Syntax</a></li>
+          <li><a href="#Syntax18">Syntax</a></li>
           <li><a href="#Example8">Example</a></li>
         </ul>
       </li>
@@ -170,20 +171,20 @@
       <li><a href="#fetch">fetch</a>
         <ul>
           <li><a href="#Description21">Description</a></li>
-          <li><a href="#Syntax18">Syntax</a></li>
+          <li><a href="#Syntax19">Syntax</a></li>
           <li><a href="#Example10">Example</a></li>
         </ul>
       </li>
       <li><a href="#fetchAll">fetchAll</a>
         <ul>
           <li><a href="#Description22">Description</a></li>
-          <li><a href="#Syntax19">Syntax</a></li>
+          <li><a href="#Syntax20">Syntax</a></li>
           <li><a href="#Example11">Example</a></li>
         </ul>
       </li>
       <li><a href="#setColumns">setColumns</a>
         <ul>
-          <li><a href="#Syntax20">Syntax</a></li>
+          <li><a href="#Syntax21">Syntax</a></li>
           <li><a href="#Example12">Example</a></li>
         </ul>
       </li>
@@ -431,7 +432,7 @@
 <h3 id="Syntax6">Syntax</h3>
 
 <pre><code><code>    <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="variable">$encoded_query</span><span class="operator">);</span>
+    <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
 </code></code></pre>
 
 <h3 id="Examples1">Examples</h3>
@@ -456,7 +457,7 @@
 <h3 id="Syntax7">Syntax</h3>
 
 <pre><code><code>    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">$encoded_query</span><span class="operator">);</span>
+    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
 </code></code></pre>
 
 <h3 id="Example2">Example</h3>
@@ -478,7 +479,7 @@
 <h3 id="Syntax8">Syntax</h3>
 
 <pre><code><code>    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">$encoded_query</span><span class="operator">);</span>
+    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
 </code></code></pre>
 
 <h3 id="Example3">Example</h3>
@@ -514,7 +515,7 @@
 
 <pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">();</span>
     <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="variable">$encoded_query</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
 </code></code></pre>
 
 <h3 id="Examples2">Examples</h3>
@@ -631,9 +632,25 @@
 
 <h3 id="Description13">Description</h3>
 
-<p>This function creates a new Query object by calling <a href="#getKeys">getKeys</a> =head3 Syntax</p>
+<p>This function creates a new Query object by calling <a href="#getKeys">getKeys</a>.</p>
+
+<h3 id="Syntax13">Syntax</h3>
+
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
+    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">};</span>
+</code></code></pre>
 
 <h3 id="Example4">Example</h3>
+
+<p>The following example builds a list of all Incidents created between 1/1/2014 and 2/1/2014 sorted by creation date/time. The <code><code>fetchAll</code></code> method fetches chunks of records until all records have been retrieved.</p>
+
+<pre><code><code>    <span class="keyword">my</span> <span class="variable">$filter</span> <span class="operator">=</span> <span class="string">"sys_created_on&gt;=2014-01-01^sys_created_on&lt;2014-02-01"</span>
+    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">)-&gt;</span><span class="variable">query</span><span class="operator">(</span>
+        <span class="string">__encoded_query</span> <span class="operator">=&gt;</span> <span class="variable">$filter</span><span class="operator">,</span>
+        <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"sys_created_on);
+    my </span><span class="variable">@recs</span><span class="string"> = </span><span class="variable">$qry</span><span class="string">-&gt;fetchAll();
+    </span>
+</code></code></pre>
 
 <h2 id="asQuery">asQuery</h2>
 
@@ -641,16 +658,20 @@
 
 <p>This function creates a new Query object from a list of keys. It does not make any Web Services calls. It simply makes a copy of the list. Each item in the list must be a sys_id for the respective table.</p>
 
-<h3 id="Syntax13">Syntax</h3>
+<h3 id="Syntax14">Syntax</h3>
 
 <pre><code><code>    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@keys</span><span class="operator">);</span>
 </code></code></pre>
 
 <h3 id="Example5">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sys_user</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$sys_user</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">();</span>
-    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$sys_user</span><span class="operator">-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@keys</span><span class="operator">);</span>
+<p>In this example, assume that <code><code>@incRecs</code></code> contains an array of <code><code>incident</code></code> records from a previous query. We want to create an array of <code><code>sys_user_group</code></code> records for all referenced assignment groups. We use <code><code>map</code></code> to extract a list of assignment groups from the <code><code>incident</code></code> records, <code><code>grep</code></code> to discard the blanks, and <code><code>uniq</code></code> to discard the duplicates. The <code><code>grpKeys</code></code> array is then used to construct a new Query using <code><code>asQuery</code></code> and <code><code>fetchAll</code></code> is used to retrieve the records.</p>
+
+<pre><code><code>    <span class="keyword">use</span> <span class="variable">List::MoreUtils</span> <span class="string">qw(uniq)</span><span class="operator">;</span>
+    
+    <span class="keyword">my</span> <span class="variable">@grpKeys</span> <span class="operator">=</span> <span class="variable">uniq</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="operator">!</span><span class="regex">/^$/</span> <span class="operator">}</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">assignment_group</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@incRecs</span><span class="operator">;</span>
+    <span class="keyword">my</span> <span class="variable">@grpRecs</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">'sys_user_group'</span><span class="operator">)-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@grpKeys</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
+        
 </code></code></pre>
 
 <h2 id="attachFile">attachFile</h2>
@@ -667,7 +688,7 @@
 
 <p>This function will die if the file cannot be read.</p>
 
-<h3 id="Syntax14">Syntax</h3>
+<h3 id="Syntax15">Syntax</h3>
 
 <pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">attachFile</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">,</span> <span class="variable">$mime_type</span><span class="operator">,</span> <span class="variable">$attachment_name</span><span class="operator">);</span>
 </code></code></pre>
@@ -706,7 +727,7 @@
 </li>
 </ul>
 
-<h3 id="Syntax15">Syntax</h3>
+<h3 id="Syntax16">Syntax</h3>
 
 <pre><code><code>    <span class="variable">$sc_req_item</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sc_req_item"</span><span class="operator">);</span>
     <span class="variable">@vars</span> <span class="operator">=</span> <span class="variable">$sc_req_item</span><span class="operator">-&gt;</span><span class="variable">getVariables</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">);</span>
@@ -730,7 +751,7 @@
 
 <p>For additional information regarding display values refer to <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables">http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables</a></p>
 
-<h3 id="Syntax16">Syntax</h3>
+<h3 id="Syntax17">Syntax</h3>
 
 <pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">setDV</span><span class="operator">(</span><span class="string">"true"</span><span class="operator">);</span>
     <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">setDV</span><span class="operator">(</span><span class="string">"all"</span><span class="operator">);</span>
@@ -765,7 +786,7 @@
 
 <p>Returns a hash of the fields in an sequence (complex type) from the WSDL. The hash key is the field name. The hash value is the field type.</p>
 
-<h3 id="Syntax17">Syntax</h3>
+<h3 id="Syntax18">Syntax</h3>
 
 <pre><code><code>    <span class="variable">%fields</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getFields</span><span class="operator">(</span><span class="variable">$type</span><span class="operator">);</span>
 </code></code></pre>
@@ -851,7 +872,7 @@
 
 <p>Fetch the next chunk of records from a table. This function calls <a href="#getRecords">&quot;getRecords&quot;</a> to retrieve the records. An optional parameter allows specification of the number of records to be retrieved. If not specified, then the number of records will be based on the default chunk size for this Query object. If there are no remaining records, then an empty list will be returned.</p>
 
-<h3 id="Syntax18">Syntax</h3>
+<h3 id="Syntax19">Syntax</h3>
 
 <pre><code><code>    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">();</span>
     <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">(</span><span class="variable">$numrecs</span><span class="operator">);</span>
@@ -875,7 +896,7 @@
 
 <p>Fetch all the records in a Query by calling <a href="#fetch">fetch</a> repeatedly until there are no more records.</p>
 
-<h3 id="Syntax19">Syntax</h3>
+<h3 id="Syntax20">Syntax</h3>
 
 <pre><code><code>    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
     <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetchAll</span><span class="operator">(</span><span class="variable">$chunkSize</span><span class="operator">);</span>
@@ -895,7 +916,7 @@
 
 <p>Restrict the list of columns that will be returned =head3 Description</p>
 
-<h3 id="Syntax20">Syntax</h3>
+<h3 id="Syntax21">Syntax</h3>
 
 <h3 id="Example12">Example</h3>
 
