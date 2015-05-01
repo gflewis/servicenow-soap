@@ -10,17 +10,22 @@ my $sn = TestUtil::getSession();
 
 my $computer = $sn->table('cmdb_ci_computer');
 my $query1 = $computer->query(operational => 1, sys_class_name => 'cmdb_ci_computer')->setChunk(500);
-my $count1 = $query1->getCount();
+my $count = $query1->getCount();
 my $query2 = $computer->asQuery($query1->getKeys())->setColumns(
     "sys_id,name,sys_created_on,sys_updated_on")->setChunk(500);
-ok ($query2->getCount() == $count1, "$count1 records in query");
+ok ($query2->getCount() == $count, "$count records in query");
 
 my $start1 = Time::HiRes::time();
 my @recs1 = $query1->fetchAll();
 my $finish1 = Time::HiRes::time();
+my $count1 = @recs1;
+ok ($count1 == $count, "$count1 records retrieved (expected $count)");
+
 my $start2 = $finish1;
 my @recs2 = $query2->fetchAll();
 my $finish2 = Time::HiRes::time();
+my $count2 = @recs2;
+ok ($count2 == $count, "$count2 records retrieved (expected $count)");
 
 my $elapsed1 = $finish1 - $start1;
 my $elapsed2 = $finish2 - $start2;
