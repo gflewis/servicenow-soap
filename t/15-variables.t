@@ -43,7 +43,7 @@ foreach my $var (sort { $a->{order} <=> $b->{order} } @vars) {
 ok (scalar(@vars) > $minimum, "$ritmNumber has $count variables");
 
 # check result type for all reference variables
-my ($refvarcount, $refvarok);
+my ($refvarcount, $refvarok) = (0, 0);
 foreach my $var (@vars) {
     if ($var->{reference}) {
         $refvarcount++;

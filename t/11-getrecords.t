@@ -4,14 +4,20 @@ use TestUtil;
 use Test::More;
 use ServiceNow::SOAP;
 
-if (TestUtil::config) { plan tests => 3 } else { plan skip_all => "no config" };
+if (TestUtil::config) { plan tests => 4 } else { plan skip_all => "no config" };
 my $sn = TestUtil::getSession();
 
 my $cmn_location = $sn->table("cmn_location");
-my @locations = $cmn_location->getRecords(__order_by => "name");
-ok(@locations > 3, "At least 3 locations");
-ok(@locations < 251, "Fewer than 250 locations");
+my @locs1 = $cmn_location->getRecords(__order_by => "name");
+ok(@locs1 > 3, "At least 3 locations");
+ok(@locs1 < 251, "Fewer than 250 locations returned");
+my @locs2 = $cmn_location->getRecords(name => "Some nonsense location");
+ok(@locs2 == 0, "Empty set returned");
+
+SKIP: {
+skip "aggregates disabled", 1 unless getProp("test_aggregates");
 my $locationCount = $cmn_location->count();
-ok($locationCount == scalar(@locations), "Location count = $locationCount");
+ok($locationCount == scalar(@locs1), "Location count = $locationCount");
+}
 
 1;

@@ -571,15 +571,20 @@ sub getRecords {
     $self->traceBefore('getRecords');
     my $som = $self->callMethod('getRecords' => _soapParams(@_));
     Carp::croak $som->faultdetail if $som->fault;
-    my $type = ref($som->body->{getRecordsResponse}->{getRecordsResult});
+    my $response = $som->body->{getRecordsResponse};
+    # $response should be a HASH array
+    unless (ref $response eq 'HASH') {
+        $self->traceAfter("0 records");
+        return ();
+    }
+    my $result = $response->{getRecordsResult};
+    my $type = ref($result);
     die "getRecords: Unexpected $type" unless ($type eq 'ARRAY' || $type eq 'HASH');
-    my @records = ($type eq 'ARRAY') ?
-        @{$som->body->{getRecordsResponse}->{getRecordsResult}} :
-        ($som->body->{getRecordsResponse}->{getRecordsResult});
+    my @records = ($type eq 'ARRAY') ? @{$result} : ($result);
     my $count = @records;
     $self->traceAfter("$count records");
     return @records;
-}    
+}
 
 =head2 getRecord
 

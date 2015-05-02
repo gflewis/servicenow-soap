@@ -4,7 +4,11 @@ use TestUtil;
 use Test::More;
 use ServiceNow::SOAP;
 
-if (TestUtil::config) { plan tests => 7 } else { plan skip_all => "no config" };
+if (TestUtil::config) { 
+    if (getProp("test_aggregates")) { plan tests => 7 }
+    else { plan skip_all => "aggregates disabled" }
+} 
+else { plan skip_all => "no config" };
 my $sn = TestUtil::getSession();
 
 my $computer = $sn->table('cmdb_ci_computer');

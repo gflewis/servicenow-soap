@@ -5,7 +5,12 @@ use Test::More;
 use ServiceNow::SOAP;
 use Time::HiRes;
 
-if (TestUtil::config) { plan tests => 4 } else { plan skip_all => "no config" };
+if (TestUtil::config) { 
+    if (getProp("test_aggregates")) { plan tests => 4 }
+    else { plan skip_all => "aggregates disabled" }
+} 
+else { plan skip_all => "no config" };
+
 my $sn = TestUtil::getSession();
 my $tblname = "cmdb_ci";
 my $tbl = $sn->table($tblname);
