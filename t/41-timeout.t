@@ -6,8 +6,8 @@ use ServiceNow::SOAP;
 use Time::HiRes;
 
 if (TestUtil::config) { 
-    if (getProp("test_aggregates")) { plan tests => 4 }
-    else { plan skip_all => "aggregates disabled" }
+    if (getProp("test_timeout")) { plan tests => 4 }
+    else { plan skip_all => "timeout test disabled" }
 } 
 else { plan skip_all => "no config" };
 

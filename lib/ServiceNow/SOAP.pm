@@ -425,6 +425,7 @@ sub callMethod {
     my $method = SOAP::Data->name($methodname)->attr({xmlns => $xmlns});
     my $client = $self->{client};
     my $som = $client->endpoint($endpoint)->call($method => @_);
+    Carp::croak $som->faultdetail if $som->fault;        
     return $som;
 }
 
@@ -491,7 +492,6 @@ sub get {
     $self->traceBefore('get');
     my $som = $self->callMethod('get' => _soapParams(@_));
     $self->traceAfter();
-    Carp::croak $som->faultdetail if $som->fault;
     my $result = $som->body->{getResponse};
     return $result;
 }
@@ -527,7 +527,6 @@ sub getKeys {
     my @params = _soapParams(@_);
     $self->traceBefore('getKeys');
     my $som = $self->callMethod('getKeys', @params);
-    Carp::croak $som->faultdetail if $som->fault;
     my @keys = split /,/, $som->result;
     my $count = @keys;
     $self->traceAfter("$count keys");
@@ -570,9 +569,7 @@ sub getRecords {
     my $self = shift;
     $self->traceBefore('getRecords');
     my $som = $self->callMethod('getRecords' => _soapParams(@_));
-    Carp::croak $som->faultdetail if $som->fault;
     my $response = $som->body->{getRecordsResponse};
-    # $response should be a HASH array
     unless (ref $response eq 'HASH') {
         $self->traceAfter("0 records");
         return ();
@@ -662,7 +659,6 @@ sub count {
     push @params, _soapParams(@_) if @_;
     $self->traceBefore('aggregate count');
     my $som = $self->callMethod('aggregate' => @params);
-    Carp::croak $som->faultdetail if $som->fault;    
     my $count = $som->body->{aggregateResponse}->{aggregateResult}->{COUNT};
     $self->traceAfter("count=$count");
     return $count;

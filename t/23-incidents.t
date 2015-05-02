@@ -11,12 +11,10 @@ my $sn = TestUtil::getSession();
 
 my $incident = $sn->table('incident');
 my $sys_user_group = $sn->table('sys_user_group')->setDV('true');
-my $startDate = getProp('start_date');
-my $endDate = getProp('end_date');
-my $filter = "sys_created_on>=$startDate^sys_created_on<$endDate";
+my $filter = getProp('incident_filter');
 print "filter=$filter\n";
 my $count = $incident->count($filter);
-ok ($count >= 100, "count($count) is at least 50");
+ok ($count >= 50, "count($count) is at least 50");
 ok ($count < 10000, "count($count) is less than 10000");
 
 my @incRecs = $incident->query($filter)->fetchAll();
