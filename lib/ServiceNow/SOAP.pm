@@ -657,6 +657,7 @@ sub count {
     push @params, _soapParams(@_) if @_;
     $self->traceBefore('aggregate count');
     my $som = $self->callMethod('aggregate' => @params);
+    Carp::croak $som->faultdetail if $som->fault;    
     my $count = $som->body->{aggregateResponse}->{aggregateResult}->{COUNT};
     $self->traceAfter("count=$count");
     return $count;
