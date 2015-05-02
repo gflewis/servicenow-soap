@@ -16,7 +16,7 @@ my $endDate = getProp('end_date');
 my $filter = "sys_created_on>=$startDate^sys_created_on<$endDate";
 print "filter=$filter\n";
 my $count = $incident->count($filter);
-ok ($count >= 100, "count($count) is at least 100");
+ok ($count >= 100, "count($count) is at least 50");
 ok ($count < 10000, "count($count) is less than 10000");
 
 my @incRecs = $incident->query($filter)->fetchAll();

@@ -17,7 +17,7 @@ ok(@locs2 == 0, "Empty set returned");
 SKIP: {
 skip "aggregates disabled", 1 unless getProp("test_aggregates");
 my $locationCount = $cmn_location->count();
-ok($locationCount == scalar(@locs1), "Location count = $locationCount");
+ok($locationCount >= scalar(@locs1), "Location count = $locationCount");
 }
 
 1;
