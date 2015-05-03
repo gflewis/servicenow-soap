@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>SErviceNow::SOAP</title>
+<title>ServiceNow::SOAP</title>
 <link rel="stylesheet" href="http://st.pimg.net/tucs/style.css?3" type="text/css" />
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rev="made" href="mailto:vxd@glow.apple.com" />
@@ -775,7 +775,17 @@
 
 <p>A Query object is essentially a list of keys (sys_ids) for a particular table, and a pointer to the current position in that list. Query objects and the related functions implement the ServiceNow best practice recommendations for using Web Services to query large tables as documented here: <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries</a>.</p>
 
-<p>To construct a new Query object use the <a href="#query">&quot;query&quot;</a> or <a href="#asQuery">&quot;asQuery&quot;</a> Table Methods. <a href="#query">&quot;query&quot;</a> makes a Web Services call (<a href="#getKeys">&quot;getKeys&quot;</a>) to retrieve a list of keys. <a href="#asQuery">&quot;asQuery&quot;</a> simply converts an exsiting list of keys into a Query object.</p>
+<p>To construct a new Query object use the <a href="#query">&quot;query&quot;</a> or <a href="#asQuery">&quot;asQuery&quot;</a> Table method.</p>
+
+<ul>
+
+<li><p><a href="#query">&quot;query&quot;</a> makes a Web Services call (<a href="#getKeys">&quot;getKeys&quot;</a>) to retrieve a list of keys.</p>
+
+</li>
+<li><p><a href="#asQuery">&quot;asQuery&quot;</a> simply converts an exsiting list of keys into a Query object.</p>
+
+</li>
+</ul>
 
 <p>Once constructed, the <a href="#fetch">fetch</a> and <a href="#fetchAll">fetchAll</a> functions can be used to get the actual records in chunks.</p>
 
