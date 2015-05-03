@@ -7,6 +7,8 @@ View the perldoc at http://gflewis.github.io/servicenow-soap/perldoc.html
 ## Description
 
 A better Perl API for ServiceNow.
+This API is simpler than ServiceNow::Simple 
+and more powerful than ServiceNow's out-of-box Perl API.
 
 Features of this module include:
 
