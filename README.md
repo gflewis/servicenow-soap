@@ -1,10 +1,24 @@
-# ServiceNow-SOAP version 0.20
-
-Second generation ServiceNow SOAP API from perl.
+# ServiceNow::SOAP
 
 This module and this site are still **UNDER CONSTRUCTION**.
 
 View the perldoc at http://gflewis.github.io/servicenow-soap/perldoc.html
+
+## Description
+
+A better Perl API for ServiceNow.
+
+Features of this module include:
+
+* Simple API which closely mirrors
+ServiceNow's Direct Web Services API documentation.
+
+* Easy to use methods for reading tables
+that follow best practice recommendations
+and overcome ServiceNow's built-in default limitation
+of 250 records per Web Services call.
+
+* Specialized functions such as attachFile and getVariables.
 
 ## Installation
 
