@@ -1192,9 +1192,19 @@ for using Web Services to query large tables as documented
 here:
 L<http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>.
 
-To construct a new Query object use the L</query> or L</asQuery> Table Methods.
+To construct a new Query object use the L</query> or L</asQuery> Table method.
+
+=over
+
+=item *
+
 L</query> makes a Web Services call (L</getKeys>) to retrieve a list of keys.
+
+=item *
+
 L</asQuery> simply converts an exsiting list of keys into a Query object.
+
+=back
 
 Once constructed, the L<fetch|/fetch> and L<fetchAll|/fetchAll> functions
 can be used to get the actual records in chunks.
