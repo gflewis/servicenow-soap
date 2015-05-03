@@ -31,8 +31,6 @@ To install this module
 
 ## Dependencies
 
-This module requires these and other modules and libraries:
-
     SOAP::Lite
     LWP::UserAgent
     HTTP::Cookies
