@@ -1,5 +1,4 @@
-ServiceNow-SOAP version 0.20
-============================
+# ServiceNow-SOAP version 0.20
 
 Second generation ServiceNow SOAP API from perl.
 
@@ -7,8 +6,7 @@ This module and this site are still **UNDER CONSTRUCTION**.
 
 View the perldoc at http://gflewis.github.io/servicenow-soap/perldoc.html
 
-INSTALLATION
-------------
+## Installation
 
 To install this module
 
@@ -17,8 +15,7 @@ To install this module
     ./Build test
     ./Build install
 
-DEPENDENCIES
-------------
+## Dependencies
 
 This module requires these and other modules and libraries:
 
@@ -29,15 +26,12 @@ This module requires these and other modules and libraries:
     XML::Simple
     Time::HiRes
 
-LICENSE AND COPYRIGHT
+## License and Copyright
 
 Copyright (C) 2015 Giles Lewis
 
 This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (2.0). You may obtain a
-copy of the full license at:
-
-L<http://www.perlfoundation.org/artistic_license_2_0>
+under the terms of the the Artistic License (2.0).
 
 Any use, modification, and distribution of the Standard or Modified
 Versions is governed by this Artistic License. By using, modifying or
