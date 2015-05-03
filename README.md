@@ -2,8 +2,6 @@
 
 This module and this site are still **UNDER CONSTRUCTION**.
 
-View the perldoc at http://gflewis.github.io/servicenow-soap/perldoc.html
-
 ## Description
 
 A better Perl API for ServiceNow.
@@ -21,6 +19,8 @@ and overcome ServiceNow's built-in default limitation
 of 250 records per Web Services call.
 
 * Specialized functions such as attachFile and getVariables.
+
+View the perldoc at http://gflewis.github.io/servicenow-soap/perldoc.html
 
 ## Installation
 
