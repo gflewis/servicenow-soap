@@ -1,7 +1,9 @@
 use strict;
 use warnings;
+
 use ServiceNow::SOAP;
 use Test::More;
+use lib 't';
 use TestUtil;
 
 # This script tests insert, update, attachFile and deleteRecord

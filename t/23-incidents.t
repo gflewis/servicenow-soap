@@ -1,9 +1,10 @@
 use strict;
 use warnings;
-use TestUtil;
 use Test::More;
 use ServiceNow::SOAP;
 use List::MoreUtils qw(uniq);
+use lib 't';
+use TestUtil;
 
 if (TestUtil::config) { plan tests => 3 } 
 else { plan skip_all => "no config" };

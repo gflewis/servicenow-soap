@@ -1,5 +1,6 @@
 use strict;
 use ServiceNow::SOAP;
+use lib 't';
 use TestUtil;
 use Test::More;
 if (TestUtil::config) { plan tests => 1 } else { plan skip_all => "no config" };

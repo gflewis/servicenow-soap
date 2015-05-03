@@ -1,8 +1,10 @@
 use strict;
 use warnings;
-use TestUtil;
-use Test::More;
+
 use ServiceNow::SOAP;
+use Test::More;
+use lib 't';
+use TestUtil;
 
 # Verify we can we query a table using location.name=$value 
 

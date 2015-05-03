@@ -1,7 +1,8 @@
 use strict;
-use TestUtil;
-use Test::More;
 use ServiceNow::SOAP;
+use Test::More;
+use lib 't';
+use TestUtil;
 
 if (TestUtil::config) { plan tests => 1 } else { plan skip_all => "no config" };
 my $sn = TestUtil::getSession();

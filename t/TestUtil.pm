@@ -7,12 +7,14 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(config getProp getTimestamp);
 
-my $configfile = "test.config";
 our $config;
 
 sub config {
-    unless (-f $configfile) { return undef };
-    do $configfile;
+    foreach my $configfile ('test.config', 't/test.config') {
+        next unless -f $configfile;
+        do $configfile;
+        return $config;
+    }
     return $config;
 };
 

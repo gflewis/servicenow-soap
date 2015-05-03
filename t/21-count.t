@@ -1,8 +1,10 @@
 use strict;
 use warnings;
-use TestUtil;
-use Test::More;
+
 use ServiceNow::SOAP;
+use Test::More;
+use lib 't';
+use TestUtil;
 
 if (TestUtil::config) { 
     if (getProp("test_aggregates")) { plan tests => 7 }

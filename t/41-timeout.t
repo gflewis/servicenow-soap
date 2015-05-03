@@ -1,9 +1,10 @@
 use strict;
 use warnings;
-use TestUtil;
-use Test::More;
 use ServiceNow::SOAP;
+use Test::More;
 use Time::HiRes;
+use lib 't';
+use TestUtil;
 
 if (TestUtil::config) { 
     if (getProp("test_timeout")) { plan tests => 4 }
