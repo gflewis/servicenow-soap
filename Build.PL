@@ -11,11 +11,10 @@ my $builder = Module::Build->new(
         'HTTP::Cookies' => 0,
         'MIME::Base64' => 0,
         'XML::Simple' => 0,
-        'Time::HiRes' =>
-        'Carp' => 0
+        'Time::HiRes' => 0,
         },
     test_requires => {
-        'Test::More' => 0
+        'Test::More' => 0,
     }
 );
 
