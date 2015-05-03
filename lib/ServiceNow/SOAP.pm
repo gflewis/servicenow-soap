@@ -24,7 +24,7 @@ our $DEFAULT_DV = 0;
 
 =head1 NAME
 
-ServiceNow::SOAP - Second Generation SOAP API for ServiceNow
+ServiceNow::SOAP - A better perl API for ServiceNow
 
 =head1 SYNOPSIS
 
