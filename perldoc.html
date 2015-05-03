@@ -2,10 +2,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>ServiceNow::SOAP</title>
+<title>SErviceNow::SOAP</title>
 <link rel="stylesheet" href="http://st.pimg.net/tucs/style.css?3" type="text/css" />
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rev="made" href="mailto:" />
+<link rev="made" href="mailto:vxd@glow.apple.com" />
 </head>
 
 <body>
@@ -198,98 +198,98 @@
 
 <h1 id="SYNOPSIS">SYNOPSIS</h1>
 
-<pre><code><code>    <span class="comment"># return a reference to a session object</span>
-    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="variable">$instancename</span><span class="operator">,</span> <span class="variable">$username</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
+<pre><code>    # return a reference to a session object
+    my $sn = ServiceNow($instancename, $username, $password);
     
-    <span class="comment"># return a reference to a table object</span>
-    <span class="keyword">my</span> <span class="variable">$table</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="variable">$tablename</span><span class="operator">);</span>
+    # return a reference to a table object
+    my $table = $sn-&gt;table($tablename);
+
+    # count records
+    my $count = $table-&gt;count(%parameters);
     
-    <span class="comment"># count records</span>
-    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
+    # return a list of sys_ids
+    my @keys = $table-&gt;getKeys(%parameters);
     
-    <span class="comment"># return a list of sys_ids</span>
-    <span class="keyword">my</span> <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
+    # return a single record as a hash
+    my $rec = $table-&gt;get(sys_id =&gt; $sys_id);
     
-    <span class="comment"># return a single record as a hash</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">);</span>
+    # return a set of records as an array of hashes
+    my @recs = $table-&gt;getRecords(%parameters);
+
+    # call getKeys and return a query object
+    my $qry = $table-&gt;query(%parameters);
     
-    <span class="comment"># return a set of records as an array of hashes</span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
+    # fetch the next chunk of records
+    my @recs = $qry-&gt;fetch($numrecs);
+
+    # retrieve a record based on a unique key other than sys_id
+    my $rec = $table-&gt;getRecord($name =&gt; $value);
     
-    <span class="comment"># call getKeys and return a query object</span>
-    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
+    # insert a record
+    $table-&gt;insert(%parameters);
     
-    <span class="comment"># fetch the next chunk of records</span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$qry</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">(</span><span class="variable">$numrecs</span><span class="operator">);</span>
-    
-    <span class="comment"># retrieve a record based on a unique key other than sys_id</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">$name</span> <span class="operator">=&gt;</span> <span class="variable">$value</span><span class="operator">);</span>
-    
-    <span class="comment"># insert a record</span>
-    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    
-    <span class="comment"># update a record</span>
-    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-</code></code></pre>
+    # update a record
+    $table-&gt;update(%parameters);
+    </code></pre>
 
 <h1 id="EXAMPLES">EXAMPLES</h1>
 
-<pre><code><code>    <span class="keyword">use</span> <span class="variable">ServiceNow::SOAP</span><span class="operator">;</span>
+<pre><code>    use ServiceNow::SOAP;
     
-    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"mycompany"</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
+    my $sn = ServiceNow(&quot;mycompany&quot;, &quot;soap.perl&quot;, $password);
     
-    <span class="keyword">my</span> <span class="variable">$computer_tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
+    my $computer_tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
+
+    # retrieve a small number of records     
+    my @recs = $computer_tbl-&gt;getRecords(
+        &quot;location.name&quot; =&gt; &quot;London&quot;, 
+        &quot;operational_status&quot; =&gt; &quot;1&quot;,
+        __order_by =&gt; &quot;name&quot;, 
+        __limit =&gt; 500);
+    foreach my $rec (@recs) {
+        print $rec-&gt;{name}, &quot;\n&quot;;
+    }
     
-    <span class="comment"># retrieve a small number of records     </span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span>
-        <span class="string">"location.name"</span> <span class="operator">=&gt;</span> <span class="string">"London"</span><span class="operator">,</span> 
-        <span class="string">"operational_status"</span> <span class="operator">=&gt;</span> <span class="string">"1"</span><span class="operator">,</span>
-        <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">,</span> 
-        <span class="string">__limit</span> <span class="operator">=&gt;</span> <span class="number">500</span><span class="operator">);</span>
-    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">(</span><span class="variable">@recs</span><span class="operator">)</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
+    # count records
+    my $count = $computer_tbl-&gt;count(
+        &quot;location.name&quot; =&gt; &quot;London&quot;, 
+        &quot;operational_status&quot; =&gt; &quot;1&quot;);
     
-    <span class="comment"># count records</span>
-    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span>
-        <span class="string">"location.name"</span> <span class="operator">=&gt;</span> <span class="string">"London"</span><span class="operator">,</span> 
-        <span class="string">"operational_status"</span> <span class="operator">=&gt;</span> <span class="string">"1"</span><span class="operator">);</span>
+    # retrieve records in chunks 
+    my $qry = $computer_tbl-&gt;query(
+        &quot;location.name&quot; =&gt; &quot;London&quot;, 
+        &quot;operational_status&quot; =&gt; &quot;1&quot;,
+        __order_by =&gt; &quot;name&quot;);
+    while (@recs = $qry-&gt;fetch(200)) {
+        foreach my $rec (@recs) {
+            print $rec-&gt;{name}, &quot;\n&quot;;
+        }
+    }
     
-    <span class="comment"># retrieve records in chunks </span>
-    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span>
-        <span class="string">"location.name"</span> <span class="operator">=&gt;</span> <span class="string">"London"</span><span class="operator">,</span> 
-        <span class="string">"operational_status"</span> <span class="operator">=&gt;</span> <span class="string">"1"</span><span class="operator">,</span>
-        <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">);</span>
-    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$qry</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">(</span><span class="number">200</span><span class="operator">))</span> <span class="operator">{</span>
-        <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">(</span><span class="variable">@recs</span><span class="operator">)</span> <span class="operator">{</span>
-            <span class="keyword">print</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-        <span class="operator">}</span>
-    <span class="operator">}</span>
+    # retrieve all the records in a large table 
+    my $recs = $computer_tbl-&gt;query()-&gt;fetchAll();
     
-    <span class="comment"># retrieve all the records in a large table </span>
-    <span class="keyword">my</span> <span class="variable">$recs</span> <span class="operator">=</span> <span class="variable">$computer_tbl</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">()-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
+    # insert a record
+    my $incident_tbl = $sn-&gt;table(&quot;incident&quot;);
+    my $sys_id = $incident_tbl-&gt;insert(
+        assignment_group =&gt; &quot;Network Support&quot;,
+        short_description =&gt; $short_description,
+        impact =&gt; 2);
+
+    # retrieve a single record based on sys_id
+    my $rec = $incident_tbl-&gt;get(sys_id =&gt; $sys_id);
+    print &quot;number=&quot;, $rec-&gt;{number}, &quot;\n&quot;;
+
+    # retrieve a single record based on number
+    my $rec = $incident_tbl-&gt;getRecord(number =&gt; $number);
+    print &quot;sys_id=&quot;, $rec-&gt;{sys_id}, &quot;\n&quot;;
     
-    <span class="comment"># insert a record</span>
-    <span class="keyword">my</span> <span class="variable">$incident_tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span>
-        <span class="string">assignment_group</span> <span class="operator">=&gt;</span> <span class="string">"Network Support"</span><span class="operator">,</span>
-        <span class="string">short_description</span> <span class="operator">=&gt;</span> <span class="variable">$short_description</span><span class="operator">,</span>
-        <span class="string">impact</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
-    
-    <span class="comment"># retrieve a single record based on sys_id</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="string">"number="</span><span class="operator">,</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">number</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    
-    <span class="comment"># retrieve a single record based on number</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">number</span> <span class="operator">=&gt;</span> <span class="variable">$number</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="string">"sys_id="</span><span class="operator">,</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">sys_id</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    
-    <span class="comment"># update a record</span>
-    <span class="variable">$incident_tbl</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span>
-        <span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">,</span>
-        <span class="string">assigned_to</span> <span class="operator">=&gt;</span> <span class="string">"Fred Luddy"</span><span class="operator">,</span>
-        <span class="string">incident_state</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
-</code></code></pre>
+    # update a record
+    $incident_tbl-&gt;update(
+        sys_id =&gt; $sys_id,
+        assigned_to =&gt; &quot;Fred Luddy&quot;,
+        incident_state =&gt; 2);
+    </code></pre>
 
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
 
@@ -322,35 +322,33 @@
 
 <h3 id="Syntax">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="variable">$instancename</span><span class="operator">,</span> <span class="variable">$username</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="variable">$instanceurl</span><span class="operator">,</span> <span class="variable">$username</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="variable">$instancename</span><span class="operator">,</span> <span class="variable">$username</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">,</span> <span class="variable">$tracelevel</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $sn = ServiceNow($instancename, $username, $password);
+    my $sn = ServiceNow($instanceurl, $username, $password);
+    my $sn = ServiceNow($instancename, $username, $password, $tracelevel);
+    </code></pre>
 
 <h3 id="Examples">Examples</h3>
 
 <p>The following two statements are equivalent.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"https://mycompanydev.service-now.com"</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"mycompanydev"</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $sn = ServiceNow(&quot;https://mycompanydev.service-now.com&quot;, &quot;soap.perl&quot;, $password);
+    my $sn = ServiceNow(&quot;mycompanydev&quot;, &quot;soap.perl&quot;, $password);
+    </code></pre>
 
 <p>Tracing of Web Services calls can be enabled by passing in a fourth parameter.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="string">"mycompanydev"</span><span class="operator">,</span> <span class="string">"soap.perl"</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">,</span> <span class="number">1</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $sn = ServiceNow(&quot;mycompanydev&quot;, &quot;soap.perl&quot;, $password, 1);</code></pre>
 
 <h2 id="connect">connect</h2>
 
 <h3 id="Description1">Description</h3>
 
-<p>Use of this function is optional, but sometimes you want to know up front whether your connection credentials are valid. This function tests them by attempting to get the user&#39;s profile from <code><code>sys_user</code></code> using <code><code>getRecords</code></code>, and trapping the error. If successful, the session object is returned. If unsuccessful, null is returned and the error message is in $@.</p>
+<p>Use of this function is optional, but sometimes you want to know up front whether your connection credentials are valid. This function tests them by attempting to get the user&#39;s profile from <code>sys_user</code> using <code>getRecords</code>, and trapping the error. If successful, the session object is returned. If unsuccessful, null is returned and the error message is in $@.</p>
 
 <h3 id="Syntax1">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sn</span> <span class="operator">=</span> <span class="variable">ServiceNow</span><span class="operator">(</span><span class="variable">$instancename</span><span class="operator">,</span> <span class="variable">$username</span><span class="operator">,</span> <span class="variable">$password</span><span class="operator">)-&gt;</span><span class="variable">connect</span><span class="operator">()</span>
-        <span class="keyword">or</span> <span class="keyword">die</span> <span class="string">"Unable to connect to </span><span class="variable">$instancename</span><span class="string">: $@"</span><span class="operator">;</span>
-</code></code></pre>
+<pre><code>    my $sn = ServiceNow($instancename, $username, $password)-&gt;connect()
+        or die &quot;Unable to connect to $instancename: $@&quot;;</code></pre>
 
 <h2 id="table">table</h2>
 
@@ -360,13 +358,12 @@
 
 <h3 id="Syntax2">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$table</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="variable">$tablename</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $table = $sn-&gt;table($tablename);</code></pre>
 
 <h3 id="Example">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$computer_tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $computer_tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
+    </code></pre>
 
 <h2 id="saveSession">saveSession</h2>
 
@@ -376,8 +373,8 @@
 
 <h3 id="Syntax3">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">saveSession</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $sn-&gt;saveSession($filename);
+    </code></pre>
 
 <h2 id="loadSession">loadSession</h2>
 
@@ -387,8 +384,8 @@
 
 <h3 id="Syntax4">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">loadSession</span><span class="operator">(</span><span class="variable">$filename</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $sn-&gt;loadSession($filename);
+    </code></pre>
 
 <h1 id="TABLE-METHODS">TABLE METHODS</h1>
 
@@ -406,15 +403,14 @@
 
 <h3 id="Syntax5">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">);</span>
-    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $rec = $table-&gt;get(sys_id =&gt; $sys_id);
+    $rec = $table-&gt;get($sys_id);</code></pre>
 
 <h3 id="Example1">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">get</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">;</span>
-</code></code></pre>
+<pre><code>    my $rec = $table-&gt;get($sys_id);
+    print $rec-&gt;{name};
+    </code></pre>
 
 <h2 id="getKeys">getKeys</h2>
 
@@ -426,18 +422,17 @@
 
 <h3 id="Syntax6">Syntax</h3>
 
-<pre><code><code>    <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    @keys = $table-&gt;getKeys(%parameters);
+    @keys = $table-&gt;getKeys($encodedquery);</code></pre>
 
 <h3 id="Examples1">Examples</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$cmdb_ci_computer</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
+<pre><code>    my $cmdb_ci_computer = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
     
-    <span class="keyword">my</span> <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$cmdb_ci_computer</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="string">operational_status</span> <span class="operator">=&gt;</span> <span class="number">1</span><span class="operator">,</span> <span class="string">virtual</span> <span class="operator">=&gt;</span> <span class="string">"false"</span><span class="operator">);</span>
-    <span class="comment"># or</span>
-    <span class="keyword">my</span> <span class="variable">@keys</span> <span class="operator">=</span> <span class="variable">$cmdb_ci_computer</span><span class="operator">-&gt;</span><span class="variable">getKeys</span><span class="operator">(</span><span class="string">"operational_status=1^virtual=false"</span><span class="operator">);</span>
-</code></code></pre>
+    my @keys = $cmdb_ci_computer-&gt;getKeys(operational_status =&gt; 1, virtual =&gt; &quot;false&quot;);
+    # or
+    my @keys = $cmdb_ci_computer-&gt;getKeys(&quot;operational_status=1^virtual=false&quot;);
+    </code></pre>
 
 <h2 id="getRecords">getRecords</h2>
 
@@ -447,23 +442,22 @@
 
 <p>For additional information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getRecords">&quot;getRecords&quot; Direct SOAP API method</a>.</p>
 
-<p><b>Important Note</b>: This method will return at most 250 records, unless you specify a <code><code>__limit</code></code> parameter as documented in the ServiceNow wiki under <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters">Extended Query Parameters</a>.</p>
+<p><b>Important Note</b>: This method will return at most 250 records, unless you specify a <code>__limit</code> parameter as documented in the ServiceNow wiki under <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters">Extended Query Parameters</a>.</p>
 
 <h3 id="Syntax7">Syntax</h3>
 
-<pre><code><code>    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    @recs = $table-&gt;getRecords(%parameters);
+    @recs = $table-&gt;getRecords($encodedquery);</code></pre>
 
 <h3 id="Example2">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sys_user_group</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user_group"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">@grps</span> <span class="operator">=</span> <span class="variable">$sys_user_group</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span>
-        <span class="string">active</span> <span class="operator">=&gt;</span> <span class="variable">true</span><span class="operator">,</span> <span class="string">__limit</span> <span class="operator">=&gt;</span> <span class="number">500</span><span class="operator">,</span> <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">);</span>
-    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$grp</span> <span class="operator">(</span><span class="variable">@grps</span><span class="operator">)</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="variable">$grp</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    my $sys_user_group = $sn-&gt;table(&quot;sys_user_group&quot;);
+    my @grps = $sys_user_group-&gt;getRecords(
+        active =&gt; true, __limit =&gt; 500, __order_by =&gt; &quot;name&quot;);
+    foreach my $grp (@grps) {
+        print $grp-&gt;{name}, &quot;\n&quot;;
+    }
+    </code></pre>
 
 <h2 id="getRecord">getRecord</h2>
 
@@ -473,30 +467,29 @@
 
 <h3 id="Syntax8">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $rec = $table-&gt;getRecord(%parameters);
+    $rec = $table-&gt;getRecord($encodedquery);
+    </code></pre>
 
 <h3 id="Example3">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$number</span> <span class="operator">=</span> <span class="string">"CHG12345"</span><span class="operator">;</span>
-    <span class="keyword">my</span> <span class="variable">$chgRec</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"change_request"</span><span class="operator">)-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">number</span> <span class="operator">=&gt;</span> <span class="variable">$number</span><span class="operator">);</span>
-    <span class="keyword">if</span> <span class="operator">(</span><span class="variable">$chgRec</span><span class="operator">)</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="string">"Short description = "</span><span class="operator">,</span> <span class="variable">$chgRec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">short_description</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
-    <span class="keyword">else</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$number</span><span class="string"> not found\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    my $number = &quot;CHG12345&quot;;
+    my $chgRec = $sn-&gt;table(&quot;change_request&quot;)-&gt;getRecord(number =&gt; $number);
+    if ($chgRec) {
+        print &quot;Short description = &quot;, $chgRec-&gt;{short_description}, &quot;\n&quot;;
+    }
+    else {
+        print &quot;$number not found\n&quot;;
+    }</code></pre>
 
 <p>The following two examples are equivalent.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
+<pre><code>    my $rec = $table-&gt;getRecord(%parameters);
     
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getRecords</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="keyword">die</span> <span class="string">"Too many records"</span> <span class="keyword">if</span> <span class="keyword">scalar</span><span class="operator">(</span><span class="variable">@recs</span><span class="operator">)</span> <span class="operator">&gt;</span> <span class="number">1</span><span class="operator">;</span>
-    <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">=</span> <span class="variable">$recs</span><span class="operator">[</span><span class="number">0</span><span class="operator">]</span><span class="operator">;</span>
-</code></code></pre>
+    my @recs = $table-&gt;getRecords(%parameters);
+    die &quot;Too many records&quot; if scalar(@recs) &gt; 1;
+    my $rec = $recs[0];
+    </code></pre>
 
 <h2 id="count">count</h2>
 
@@ -508,22 +501,21 @@
 
 <h3 id="Syntax9">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">();</span>
-    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $count = $table-&gt;count();
+    my $count = $table-&gt;count(%parameters);
+    my $count = $table-&gt;count($encodedquery);</code></pre>
 
 <h3 id="Examples2">Examples</h3>
 
 <p>Count the total number of users:</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">)-&gt;</span><span class="variable">count</span><span class="operator">();</span>
-</code></code></pre>
+<pre><code>    my $count = $sn-&gt;table(&quot;sys_user&quot;)-&gt;count();
+    </code></pre>
 
 <p>Count the number of active users:</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$count</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">)-&gt;</span><span class="variable">count</span><span class="operator">(</span><span class="string">active</span> <span class="operator">=&gt;</span> <span class="variable">true</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $count = $sn-&gt;table(&quot;sys_user&quot;)-&gt;count(active =&gt; true);
+    </code></pre>
 
 <h2 id="insert">insert</h2>
 
@@ -535,42 +527,38 @@
 
 <h3 id="Syntax10">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="variable">%values</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">%result</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="variable">%values</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $sys_id = $table-&gt;insert(%values);
+    my %result = $table-&gt;insert(%values);
+    </code></pre>
 
 <h3 id="Examples3">Examples</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$incident</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $incident = $sn-&gt;table(&quot;incident&quot;);</code></pre>
 
 <p>In a scalar context, the function returns a sys_id.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span>
-        <span class="string">short_description</span> <span class="operator">=&gt;</span> <span class="variable">$short_description</span><span class="operator">,</span>
-        <span class="string">assignment_group</span> <span class="operator">=&gt;</span> <span class="string">"Network Support"</span><span class="operator">,</span>
-        <span class="string">impact</span> <span class="operator">=&gt;</span> <span class="number">3</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="string">"sys_id="</span><span class="operator">,</span> <span class="variable">$sys_id</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-</code></code></pre>
+<pre><code>    my $sys_id = $incident-&gt;insert(
+        short_description =&gt; $short_description,
+        assignment_group =&gt; &quot;Network Support&quot;,
+        impact =&gt; 3);
+    print &quot;sys_id=&quot;, $sys_id, &quot;\n&quot;;</code></pre>
 
 <p>In a list context, the function returns a list of name/value pairs.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">%result</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span>
-        <span class="string">short_description</span> <span class="operator">=&gt;</span> <span class="variable">$short_description</span><span class="operator">,</span>
-        <span class="string">assignment_group</span> <span class="operator">=&gt;</span> <span class="string">"Network Support"</span><span class="operator">,</span>
-        <span class="string">impact</span> <span class="operator">=&gt;</span> <span class="number">3</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="string">"number="</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">{</span><span class="string">number</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    <span class="keyword">print</span> <span class="string">"sys_id="</span><span class="operator">,</span> <span class="variable">$result</span><span class="operator">{</span><span class="string">sys_id</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-</code></code></pre>
+<pre><code>    my %result = $incident-&gt;insert(
+        short_description =&gt; $short_description,
+        assignment_group =&gt; &quot;Network Support&quot;,
+        impact =&gt; 3);
+    print &quot;number=&quot;, $result{number}, &quot;\n&quot;;
+    print &quot;sys_id=&quot;, $result{sys_id}, &quot;\n&quot;;</code></pre>
 
 <p>You can also call it this way:</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">%rec</span><span class="operator">;</span>
-    <span class="variable">$rec</span><span class="operator">{</span><span class="string">short_description</span><span class="operator">}</span> <span class="operator">=</span> <span class="variable">$short_description</span><span class="operator">;</span>
-    <span class="variable">$rec</span><span class="operator">{</span><span class="string">assignment_group</span><span class="operator">}</span> <span class="operator">=</span> <span class="string">"Network Support"</span><span class="operator">;</span>
-    <span class="variable">$rec</span><span class="operator">{</span><span class="string">impact</span><span class="operator">}</span> <span class="operator">=</span> <span class="number">3</span><span class="operator">;</span>
-    <span class="keyword">my</span> <span class="variable">$sys_id</span> <span class="operator">=</span> <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">insert</span><span class="operator">(</span><span class="variable">%rec</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my %rec;
+    $rec{short_description} = $short_description;
+    $rec{assignment_group} = &quot;Network Support&quot;;
+    $rec{impact} = 3;
+    my $sys_id = $incident-&gt;insert(%rec);</code></pre>
 
 <p>Note that for reference fields (e.g. assignment_group, assigned_to) you may pass in either a sys_id or a display value.</p>
 
@@ -582,11 +570,10 @@
 
 <h3 id="Syntax11">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">,</span> <span class="variable">%parameters</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $table-&gt;update(%parameters);
+    $table-&gt;update($sys_id, %parameters);</code></pre>
 
-<p>Note: If the first syntax is used, then the <code><code>sys_id</code></code> must be included among the parameters. If the second syntax is used, then the <code><code>sys_id</code></code> must be the first parameter.</p>
+<p>Note: If the first syntax is used, then the <code>sys_id</code> must be included among the parameters. If the second syntax is used, then the <code>sys_id</code> must be the first parameter.</p>
 
 <p>For reference fields (e.g. assignment_group, assigned_to) you may pass in either a sys_id or a display value.</p>
 
@@ -594,20 +581,19 @@
 
 <p>The following three examples are equivalent.</p>
 
-<pre><code><code>    <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span>
-        <span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">,</span> 
-        <span class="string">assigned_to</span> <span class="operator">=&gt;</span> <span class="string">"5137153cc611227c000bbd1bd8cd2005"</span><span class="operator">,</span>
-        <span class="string">incient_state</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
+<pre><code>    $incident-&gt;update(
+        sys_id =&gt; $sys_id, 
+        assigned_to =&gt; &quot;5137153cc611227c000bbd1bd8cd2005&quot;,
+        incient_state =&gt; 2);
         
-    <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span>
-        <span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">,</span> 
-        <span class="string">assigned_to</span> <span class="operator">=&gt;</span> <span class="string">"Fred Luddy"</span><span class="operator">,</span> 
-        <span class="string">incident_state</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
+    $incident-&gt;update(
+        sys_id =&gt; $sys_id, 
+        assigned_to =&gt; &quot;Fred Luddy&quot;, 
+        incident_state =&gt; 2);
     
-    <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">update</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">,</span> 
-        <span class="string">assigned_to</span> <span class="operator">=&gt;</span> <span class="string">"Fred Luddy"</span><span class="operator">,</span> 
-        <span class="string">incident_state</span> <span class="operator">=&gt;</span> <span class="number">2</span><span class="operator">);</span>
-</code></code></pre>
+    $incident-&gt;update($sys_id, 
+        assigned_to =&gt; &quot;Fred Luddy&quot;, 
+        incident_state =&gt; 2);</code></pre>
 
 <h2 id="deleteRecord">deleteRecord</h2>
 
@@ -617,9 +603,8 @@
 
 <h3 id="Syntax12">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">deleteRecord</span><span class="operator">(</span><span class="string">sys_id</span> <span class="operator">=&gt;</span> <span class="variable">$sys_id</span><span class="operator">);</span>
-    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">deleteRecord</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $table-&gt;deleteRecord(sys_id =&gt; $sys_id);
+    $table-&gt;deleteRecord($sys_id);</code></pre>
 
 <h2 id="query">query</h2>
 
@@ -629,21 +614,19 @@
 
 <h3 id="Syntax13">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="variable">%parameters</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="variable">$encodedquery</span><span class="operator">};</span>
-</code></code></pre>
+<pre><code>    my $query = $table-&gt;query(%parameters);
+    my $query = $table-&gt;query($encodedquery};
+    </code></pre>
 
 <h3 id="Example4">Example</h3>
 
-<p>The following example builds a list of all Incidents created between 1/1/2014 and 2/1/2014 sorted by creation date/time. The <code><code>fetchAll</code></code> method fetches chunks of records until all records have been retrieved.</p>
+<p>The following example builds a list of all Incidents created between 1/1/2014 and 2/1/2014 sorted by creation date/time. The <code>fetchAll</code> method fetches chunks of records until all records have been retrieved.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$filter</span> <span class="operator">=</span> <span class="string">"sys_created_on&gt;=2014-01-01^sys_created_on&lt;2014-02-01"</span><span class="operator">;</span>
-    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"incident"</span><span class="operator">)-&gt;</span><span class="variable">query</span><span class="operator">(</span>
-        <span class="string">__encoded_query</span> <span class="operator">=&gt;</span> <span class="variable">$filter</span><span class="operator">,</span>
-        <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"sys_created_on);
-    my </span><span class="variable">@recs</span><span class="string"> = </span><span class="variable">$qry</span><span class="string">-&gt;fetchAll();
-    </span>
-</code></code></pre>
+<pre><code>    my $filter = &quot;sys_created_on&gt;=2014-01-01^sys_created_on&lt;2014-02-01&quot;;
+    my $qry = $sn-&gt;table(&quot;incident&quot;)-&gt;query(
+        __encoded_query =&gt; $filter,
+        __order_by =&gt; &quot;sys_created_on);
+    my @recs = $qry-&gt;fetchAll();</code></pre>
 
 <h2 id="asQuery">asQuery</h2>
 
@@ -653,19 +636,17 @@
 
 <h3 id="Syntax14">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@keys</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $query = $table-&gt;asQuery(@keys);</code></pre>
 
 <h3 id="Example5">Example</h3>
 
-<p>In this example, we assume that <code><code>@incRecs</code></code> contains an array of <code><code>incident</code></code> records from a previous query. We need an array of <code><code>sys_user_group</code></code> records for all referenced assignment groups. We use <code><code>map</code></code> to extract a list of assignment group keys from the <code><code>@incRecs</code></code>; <code><code>grep</code></code> to discard the blanks; and <code><code>uniq</code></code> to discard the duplicates. <code><code>@grpKeys</code></code> contains the list of <code><code>sys_user_group</code></code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a> and <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
+<p>In this example, we assume that <code>@incRecs</code> contains an array of <code>incident</code> records from a previous query. We need an array of <code>sys_user_group</code> records for all referenced assignment groups. We use <code>map</code> to extract a list of assignment group keys from the <code>@incRecs</code>; <code>grep</code> to discard the blanks; and <code>uniq</code> to discard the duplicates. <code>@grpKeys</code> contains the list of <code>sys_user_group</code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a> and <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
 
-<pre><code><code>    <span class="keyword">use</span> <span class="variable">List::MoreUtils</span> <span class="string">qw(uniq)</span><span class="operator">;</span>
-    
-    <span class="keyword">my</span> <span class="variable">@grpKeys</span> <span class="operator">=</span> <span class="variable">uniq</span> <span class="keyword">grep</span> <span class="operator">{</span> <span class="operator">!</span><span class="regex">/^$/</span> <span class="operator">}</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">assignment_group</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@incRecs</span><span class="operator">;</span>
-    <span class="keyword">my</span> <span class="variable">@grpRecs</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user_group"</span><span class="operator">)-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@grpKeys</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
-        
-</code></code></pre>
+<pre><code>    use List::MoreUtils qw(uniq);
+
+    my @grpKeys = uniq grep { !/^$/ } map { $_-&gt;{assignment_group} } @incRecs;
+    my @grpRecs = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;asQuery(@grpKeys)-&gt;fetchAll();
+        </code></pre>
 
 <h2 id="attachFile">attachFile</h2>
 
@@ -673,7 +654,7 @@
 
 <p>If you are using Perl to create incident tickets, then you may have a requirement to attach files to those tickets.</p>
 
-<p>This function implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The function requires insert permissions on the <code><code>ecc_queue</code></code> table.</p>
+<p>This function implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The function requires insert permissions on the <code>ecc_queue</code> table.</p>
 
 <p>You will need to specify a MIME type. If no type is specified, this function will use a default type of &quot;text/plain&quot; For a list of MIME types, refer to <a href="http://en.wikipedia.org/wiki/Internet_media_type">http://en.wikipedia.org/wiki/Internet_media_type</a>.</p>
 
@@ -683,13 +664,12 @@
 
 <h3 id="Syntax15">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">attachFile</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">,</span> <span class="variable">$filename</span><span class="operator">,</span> <span class="variable">$mime_type</span><span class="operator">,</span> <span class="variable">$attachment_name</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $table-&gt;attachFile($sys_id, $filename, $mime_type, $attachment_name);</code></pre>
 
 <h3 id="Example6">Example</h3>
 
-<pre><code><code>    <span class="variable">$incident</span><span class="operator">-&gt;</span><span class="variable">attachFile</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">,</span> <span class="string">"screenshot.png"</span><span class="operator">,</span> <span class="string">"image/png"</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $incident-&gt;attachFile($sys_id, &quot;screenshot.png&quot;, &quot;image/png&quot;);
+    </code></pre>
 
 <h2 id="getVariables">getVariables</h2>
 
@@ -697,7 +677,7 @@
 
 <p>This function returns a list of hashes of the variables attached to a Requested Item (RITM).</p>
 
-<p><b>Note</b>: This function currently works only for the <code><code>sc_req_item</code></code> table.</p>
+<p><b>Note</b>: This function currently works only for the <code>sc_req_item</code> table.</p>
 
 <p>Each hash contains the following four fields:</p>
 
@@ -722,19 +702,18 @@
 
 <h3 id="Syntax16">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$sc_req_item</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sc_req_item"</span><span class="operator">);</span>
-    <span class="variable">@vars</span> <span class="operator">=</span> <span class="variable">$sc_req_item</span><span class="operator">-&gt;</span><span class="variable">getVariables</span><span class="operator">(</span><span class="variable">$sys_id</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $sc_req_item = $sn-&gt;table(&quot;sc_req_item&quot;);
+    @vars = $sc_req_item-&gt;getVariables($sys_id);
+    </code></pre>
 
 <h3 id="Example7">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sc_req_item</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sc_req_item"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$ritmRec</span> <span class="operator">=</span> <span class="variable">$sc_req_item</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">number</span> <span class="operator">=&gt;</span> <span class="variable">$ritm_number</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">@vars</span> <span class="operator">=</span> <span class="variable">$sc_req_item</span><span class="operator">-&gt;</span><span class="variable">getVariables</span><span class="operator">(</span><span class="variable">$ritmRec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">sys_id</span><span class="operator">}</span><span class="operator">);</span>
-    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$var</span> <span class="operator">(</span><span class="keyword">sort</span> <span class="operator">{</span> <span class="variable">$a</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">order</span><span class="operator">}</span> <span class="operator">&lt;=&gt;</span> <span class="variable">$b</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">order</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@vars</span><span class="operator">)</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="string">"</span><span class="variable">$var</span><span class="string">-&gt;{name} = </span><span class="variable">$var</span><span class="string">-&gt;{value}\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    my $sc_req_item = $sn-&gt;table(&quot;sc_req_item&quot;);
+    my $ritmRec = $sc_req_item-&gt;getRecord(number =&gt; $ritm_number);
+    my @vars = $sc_req_item-&gt;getVariables($ritmRec-&gt;{sys_id});
+    foreach my $var (sort { $a-&gt;{order} &lt;=&gt; $b-&gt;{order} } @vars) {
+        print &quot;$var-&gt;{name} = $var-&gt;{value}\n&quot;;
+    }</code></pre>
 
 <h2 id="setDV">setDV</h2>
 
@@ -746,32 +725,31 @@
 
 <h3 id="Syntax17">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">setDV</span><span class="operator">(</span><span class="string">"true"</span><span class="operator">);</span>
-    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">setDV</span><span class="operator">(</span><span class="string">"all"</span><span class="operator">);</span>
-    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">setDv</span><span class="operator">(</span><span class="string">""</span><span class="operator">);</span>  <span class="comment"># restore default setting</span>
-</code></code></pre>
+<pre><code>    $table-&gt;setDV(&quot;true&quot;);
+    $table-&gt;setDV(&quot;all&quot;);
+    $table-&gt;setDv(&quot;&quot;);  # restore default setting</code></pre>
 
 <h3 id="Examples5">Examples</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$sys_user_group</span> <span class="operator">=</span> <span class="variable">$session</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user_group"</span><span class="operator">)-&gt;</span><span class="variable">setDV</span><span class="operator">(</span><span class="string">"true"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$grp</span> <span class="operator">=</span> <span class="variable">$sys_user_group</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">"Network Support"</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="string">"manager="</span><span class="operator">,</span> <span class="variable">$grp</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">manager</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    
-    <span class="keyword">my</span> <span class="variable">$sys_user_group</span> <span class="operator">=</span> <span class="variable">$session</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user_group"</span><span class="operator">)-&gt;</span><span class="variable">setDV</span><span class="operator">(</span><span class="string">"all"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$grp</span> <span class="operator">=</span> <span class="variable">$sys_user_group</span><span class="operator">-&gt;</span><span class="variable">getRecord</span><span class="operator">(</span><span class="string">name</span> <span class="operator">=&gt;</span> <span class="string">"Network Support"</span><span class="operator">);</span>
-    <span class="keyword">print</span> <span class="string">"manager="</span><span class="operator">,</span> <span class="variable">$grp</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">dv_manager</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-</code></code></pre>
+<pre><code>    my $sys_user_group = $session-&gt;table(&quot;sys_user_group&quot;)-&gt;setDV(&quot;true&quot;);
+    my $grp = $sys_user_group-&gt;getRecord(name =&gt; &quot;Network Support&quot;);
+    print &quot;manager=&quot;, $grp-&gt;{manager}, &quot;\n&quot;;
+
+    my $sys_user_group = $session-&gt;table(&quot;sys_user_group&quot;)-&gt;setDV(&quot;all&quot;);
+    my $grp = $sys_user_group-&gt;getRecord(name =&gt; &quot;Network Support&quot;);
+    print &quot;manager=&quot;, $grp-&gt;{dv_manager}, &quot;\n&quot;;
+    </code></pre>
 
 <h2 id="setTimeout">setTimeout</h2>
 
 <h3 id="Description18">Description</h3>
 
-<p>Set the value of the SOAP Web Services client HTTP timeout. In addition, you may need to increase the ServiceNow system property <code><code>glide.soap.request_processing_timeout</code></code>.</p>
+<p>Set the value of the SOAP Web Services client HTTP timeout. In addition, you may need to increase the ServiceNow system property <code>glide.soap.request_processing_timeout</code>.</p>
 
 <h3 id="syntax">syntax</h3>
 
-<pre><code><code>    <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">setTimeout</span><span class="operator">(</span><span class="variable">$seconds</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $table-&gt;setTimeout($seconds);
+    </code></pre>
 
 <h2 id="getFields">getFields</h2>
 
@@ -781,16 +759,15 @@
 
 <h3 id="Syntax18">Syntax</h3>
 
-<pre><code><code>    <span class="variable">%fields</span> <span class="operator">=</span> <span class="variable">$table</span><span class="operator">-&gt;</span><span class="variable">getFields</span><span class="operator">(</span><span class="variable">$type</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    %fields = $table-&gt;getFields($type);
+    </code></pre>
 
 <h3 id="Example8">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">%fields</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user_group"</span><span class="operator">)-&gt;</span><span class="variable">getFields</span><span class="operator">(</span><span class="string">"getRecordsResponse"</span><span class="operator">);</span>
-    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$name</span> <span class="operator">(</span><span class="keyword">sort</span> <span class="keyword">keys</span> <span class="variable">%fields</span><span class="operator">)</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="string">"name=</span><span class="variable">$name</span><span class="string"> type=</span><span class="variable">$fields</span><span class="string">{</span><span class="variable">$name</span><span class="string">}\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    my %fields = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;getFields(&quot;getRecordsResponse&quot;);
+    foreach my $name (sort keys %fields) {
+        print &quot;name=$name type=$fields{$name}\n&quot;;
+    }</code></pre>
 
 <h1 id="QUERY-METHODS">QUERY METHODS</h1>
 
@@ -804,102 +781,97 @@
 
 <h2 id="Example9">Example</h2>
 
-<p>This example illustrates the use of Query objects to traverse the <code><code>cmdb_rel_ci</code></code> table. The example involves two tables: <code><code>cmdb_ci</code></code> and <code><code>cmdb_rel_ci</code></code>.</p>
+<p>This example illustrates the use of Query objects to traverse the <code>cmdb_rel_ci</code> table. The example involves two tables: <code>cmdb_ci</code> and <code>cmdb_rel_ci</code>.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$cmdb_ci</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$cmdb_rel_ci</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_rel_ci"</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my $cmdb_ci = $sn-&gt;table(&quot;cmdb_ci&quot;);
+    my $cmdb_rel_ci = $sn-&gt;table(&quot;cmdb_rel_ci&quot;);
+    </code></pre>
 
-<p>We assume that <code><code>$parentKey</code></code> is the sys_id of a known configuration item. The object is to print a list of all other configuration items on which this item immediately depends. In otherwords, all items which are one level downstream.</p>
+<p>We assume that <code>$parentKey</code> is the sys_id of a known configuration item. The objective is to print a list of all other configuration items on which this item immediately depends. In otherwords, all items which are one level downstream.</p>
 
-<p>First we query <code><code>cmdb_rel_ci</code></code> to retrieve a list of records for which this item is the parent. <code><code>@relData</code></code> is a list of <code><code>cmdb_rel_ci</code></code> records.</p>
+<p>First we query <code>cmdb_rel_ci</code> to retrieve a list of records for which this item is the parent. <code>@relData</code> is this list of <code>cmdb_rel_ci</code> records.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">@relData</span> <span class="operator">=</span> <span class="variable">$cmdb_rel_ci</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="string">parent</span> <span class="operator">=&gt;</span> <span class="variable">$parentKey</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
-</code></code></pre>
+<pre><code>    my @relData = $cmdb_rel_ci-&gt;query(parent =&gt; $parentKey)-&gt;fetchAll();</code></pre>
 
-<p>Next we extract the <code><code>child</code></code> field from each of these <code><code>cmdb_rel_ci</code></code> records to create a new list of sys_ids</p>
+<p>Next we extract the <code>child</code> field from each of these <code>cmdb_rel_ci</code> records to create a new list of sys_ids</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">@childKeys</span> <span class="operator">=</span> <span class="keyword">map</span> <span class="operator">{</span> <span class="variable">$_</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">child</span><span class="operator">}</span> <span class="operator">}</span> <span class="variable">@relData</span><span class="operator">;</span>
-</code></code></pre>
+<pre><code>    my @childKeys = map { $_-&gt;{child} } @relData;</code></pre>
 
-<p><code><code>@childKeys</code></code> now contains a lists of sys_ids for configuration items. We convert this list of keys into a query object and fetch athe records from the <code><code>cmdb_ci</code></code> table. If there are more than 200 records, <code><code>fetchAll</code></code> will loop internally until all records have been retrieved.</p>
+<p><code>@childKeys</code> now contains a lists of sys_ids for configuration items. We convert this list of keys into a query object and fetch the records from the <code>cmdb_ci</code> table. If there are more than 200 records, <code>fetchAll</code> will loop internally until all records have been retrieved.</p>
 
-<pre><code><code>    <span class="variable">@childRecs</span> <span class="operator">=</span> <span class="variable">$cmdb_ci</span><span class="operator">-&gt;</span><span class="variable">asQuery</span><span class="operator">(</span><span class="variable">@childKeys</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
-    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$childRec</span> <span class="operator">(</span><span class="variable">@childRecs</span><span class="operator">)</span> <span class="operator">{</span>
-        <span class="keyword">print</span> <span class="variable">$childRec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>            
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    @childRecs = $cmdb_ci-&gt;asQuery(@childKeys)-&gt;fetchAll();
+    foreach my $childRec (@childRecs) {
+        print $childRec-&gt;{name}, &quot;\n&quot;;            
+    }</code></pre>
 
 <h2 id="fetch">fetch</h2>
 
 <h3 id="Description21">Description</h3>
 
-<p>Fetch the next chunk of records from a table. This function calls <a href="#getRecords">&quot;getRecords&quot;</a> to retrieve the records. An optional parameter allows specification of the number of records to be retrieved. If not specified, then the number of records will be based on the default chunk size for this Query object. If there are no remaining records, then an empty list will be returned.</p>
+<p>Fetch the next chunk of records from a table. In a list context it returns a list of hashes. In a scalar context it returns a reference to an array of hashes.</p>
+
+<p>This function calls <a href="#getRecords">&quot;getRecords&quot;</a> to retrieve the records. An optional parameter allows specification of the number of records to be retrieved. If not specified, then the number of records will be based on the default chunk size for this Query object. If there are no remaining records, then an empty list will be returned.</p>
 
 <h3 id="Syntax19">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">();</span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">(</span><span class="variable">$numrecs</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my @recs = $query-&gt;fetch();
+    my @recs = $query-&gt;fetch($numrecs);</code></pre>
 
 <h3 id="Example10">Example</h3>
 
 <p>This example prints the names of all active users. Each call to <a href="#getRecords">&quot;getRecords&quot;</a> returns up to 100 users.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$query</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">)-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="string">active</span> <span class="operator">=&gt;</span> <span class="string">"true"</span><span class="operator">,</span> <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">);</span>
-    <span class="keyword">while</span> <span class="operator">(</span><span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetch</span><span class="operator">(</span><span class="number">100</span><span class="operator">))</span> <span class="operator">{</span>
-        <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">(</span><span class="variable">@recs</span><span class="operator">)</span> <span class="operator">{</span>
-            <span class="keyword">print</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-        <span class="operator">}</span>
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    my $query = $sn-&gt;table(&quot;sys_user&quot;)-&gt;query(active =&gt; &quot;true&quot;, __order_by =&gt; &quot;name&quot;);
+    while (@recs = $query-&gt;fetch(100)) {
+        foreach my $rec (@recs) {
+            print $rec-&gt;{name}, &quot;\n&quot;;
+        }
+    }</code></pre>
 
 <h2 id="fetchAll">fetchAll</h2>
 
 <h3 id="Description22">Description</h3>
 
-<p>Fetch all the records in a Query by calling <a href="#fetch">fetch</a> repeatedly until there are no more records.</p>
+<p>Fetch all the records in a Query by calling <a href="#fetch">&quot;fetch&quot;</a> repeatedly until there are no more records. In a list context it returns a list of hashes. In a scalar context it returns a reference to an array of hashes.</p>
 
 <h3 id="Syntax20">Syntax</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">fetchAll</span><span class="operator">(</span><span class="variable">$chunkSize</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    my @recs = $query-&gt;fetchAll();
+    my @recs = $query-&gt;fetchAll($chunkSize);
+    </code></pre>
 
 <h3 id="Example11">Example</h3>
 
-<p>This example prints the names of all active users. Each call to <a href="#getRecords">getRecords</a> returns up to 200 users since no chunk size was specified and the default is 200.</p>
+<p>This example prints the names of all active users. Each call to <a href="#getRecords">&quot;getRecords&quot;</a> returns up to 200 users since no chunk size was specified and the default is 200.</p>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"sys_user"</span><span class="operator">)-&gt;</span><span class="variable">query</span><span class="operator">(</span><span class="string">active</span> <span class="operator">=&gt;</span> <span class="string">"true"</span><span class="operator">,</span> <span class="string">__order_by</span> <span class="operator">=&gt;</span> <span class="string">"name"</span><span class="operator">)-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>
-    <span class="keyword">foreach</span> <span class="keyword">my</span> <span class="variable">$rec</span> <span class="operator">(</span><span class="variable">@recs</span><span class="operator">)</span> <span class="operator">{</span>
-         <span class="keyword">print</span> <span class="variable">$rec</span><span class="operator">-&gt;</span><span class="operator">{</span><span class="string">name</span><span class="operator">}</span><span class="operator">,</span> <span class="string">"\n"</span><span class="operator">;</span>
-    <span class="operator">}</span>
-</code></code></pre>
+<pre><code>    my @recs = $sn-&gt;table(&quot;sys_user&quot;)-&gt;query(active =&gt; &quot;true&quot;, __order_by =&gt; &quot;name&quot;)-&gt;fetchAll();
+    foreach my $rec (@recs) {
+         print $rec-&gt;{name}, &quot;\n&quot;;
+    }</code></pre>
 
 <h2 id="setColumns">setColumns</h2>
 
 <h3 id="Description23">Description</h3>
 
-<p>Restricts the list of columns that will be returned.</p>
+<p>Restricts the list of columns that will be returned. Returns a reference to the modified Query object.</p>
 
-<p>For some reason the Direct Web Services API allows you to specify a list of columns to be excluded from the query result, but there is no similar capability to specify a list of columns to be included. This function implements the more obviously needed behavior by inverting the list. It uses the WSDL to generate a list of columns returned by &lt;/getRecords&gt;, and subtracts the specified names to create an <code><code>&quot;__exclude_columns&quot;</code></code> extended query parameter.</p>
+<p>For some reason the Direct Web Services API allows you to specify a list of columns to be excluded from the query result, but there is no similar capability to specify a list of columns to be included. This function implements the more obviously needed behavior by inverting the list. It uses the WSDL to generate a list of columns returned by <a href="#getRecords">&quot;getRecords&quot;</a>, and subtracts the specified names to create an <code>&quot;__exclude_columns&quot;</code> extended query parameter.</p>
 
 <p>By restricting the results to the needed columns, it is possible to significantly reduce the time required for large queries.</p>
 
 <h3 id="Syntax21">Syntax</h3>
 
-<pre><code><code>    <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">setColumns</span><span class="operator">(</span><span class="variable">@list_of_columns</span><span class="operator">);</span>
-    <span class="variable">$query</span><span class="operator">-&gt;</span><span class="variable">setColumns</span><span class="operator">(</span><span class="variable">$comma_delimited_list_of_columns</span><span class="operator">);</span>
-</code></code></pre>
+<pre><code>    $query-&gt;setColumns(@list_of_columns);
+    $query-&gt;setColumns($comma_delimited_list_of_columns);
+    </code></pre>
 
 <h3 id="Example12">Example</h3>
 
-<pre><code><code>    <span class="keyword">my</span> <span class="variable">$tbl</span> <span class="operator">=</span> <span class="variable">$sn</span><span class="operator">-&gt;</span><span class="variable">table</span><span class="operator">(</span><span class="string">"cmdb_ci_computer"</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">$qry</span> <span class="operator">=</span> <span class="variable">$tbl</span><span class="operator">-&gt;</span><span class="variable">query</span><span class="operator">()-&gt;</span><span class="variable">setColumns</span><span class="operator">(</span><span class="string">qw(
+<pre><code>    my $tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
+    my $qry = $tbl-&gt;query()-&gt;setColumns(qw(
         sys_id name sys_class_name 
-        operational_status sys_updated_on)</span><span class="operator">);</span>
-    <span class="keyword">my</span> <span class="variable">@recs</span> <span class="operator">=</span> <span class="variable">$qry</span><span class="operator">-&gt;</span><span class="variable">fetchAll</span><span class="operator">();</span>    
-</code></code></pre>
+        operational_status sys_updated_on));
+    my @recs = $qry-&gt;fetchAll();    </code></pre>
 
 <h1 id="AUTHOR">AUTHOR</h1>
 
