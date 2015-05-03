@@ -8,6 +8,7 @@ This module and this site are still **UNDER CONSTRUCTION**.
 View the perldoc at http://gflewis.github.io/servicenow-soap/perldoc.html
 
 INSTALLATION
+------------
 
 To install this module
 
@@ -17,6 +18,7 @@ To install this module
     ./Build install
 
 DEPENDENCIES
+------------
 
 This module requires these and other modules and libraries:
 
