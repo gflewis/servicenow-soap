@@ -1,8 +1,5 @@
 package ServiceNow::SOAP;
 
-our $VERSION = '0.10';
-# v 0.10 2015-04-05 LewisGF initial version based on AltServiceNow
-
 use strict;
 require Exporter;
 our @ISA = qw(Exporter);
@@ -15,12 +12,12 @@ use MIME::Base64;
 use XML::Simple;
 use Time::HiRes;
 use Carp;
-# use Data::Dumper;
-# $Data::Dumper::Indent=1;
-# $Data::Dumper::Sortkeys=1;
 
-our $DEFAULT_CHUNK = 200;
+our $VERSION = '0.20';
+
+our $DEFAULT_CHUNK = 250;
 our $DEFAULT_DV = 0;
+our $startTime;
 
 =head1 NAME
 
@@ -121,8 +118,7 @@ ServiceNow::SOAP - A better perl API for ServiceNow
     
 =head1 DESCRIPTION
 
-This module is a second generation Perl API for ServiceNow
-built on top of SOAP::Lite.
+This module provides an alternate Perl API for ServiceNow.
 
 Features of this module include:
 
@@ -136,14 +132,13 @@ L<Direct Web Services API|http://wiki.servicenow.com/index.php?title=SOAP_Direct
 =item *
 
 Efficient and easy to use methods for
-reading large tables.
-Please see to L</QUERY METHODS> below.
-These methods overcome ServiceNow's
+reading large tables
+which overcome ServiceNow's
 built-in limitation of 250 records
 per SOAP Web Services call,
 and adhere to ServiceNow's 
 L<best practice recommendations|http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>
-for querying data through Web Services.
+for querying data via Web Services.
 
 =item *
 
@@ -160,7 +155,7 @@ sub SOAP::Transport::HTTP::Client::get_basic_credentials {
     my $user = $context->{user};
     my $pass = $context->{pass};
     warn "Username is null" unless $user;
-    warn "Password is null" unless $pass;
+    # warn "Password is null" unless $pass;
     return $user => $pass;
 }
 
@@ -177,14 +172,17 @@ sub ServiceNow {
     return ServiceNow::SOAP::Session->new(@_);
 }
 
-=head1 SESSION METHODS
+=head1 EXPORTED FUNCTIONS
 
-=head2 new
+=head2 ServiceNow
 
-=head3 Description
+B<Description>
 
-Used to obtain a reference to an Session object. 
-The Session object essentially holds the URL and connection credentials for your ServiceNow instance. 
+This function C<ServiceNow>
+(which is essentially an alias for ServiceNow::SOAP::Session->new()
+is used to obtain a reference to a Session object. 
+The Session object essentially holds the URL and 
+connection credentials for your ServiceNow instance. 
 The first argument is the URL or instance name.
 The second argument is the user name.
 The third argument is the password. 
@@ -196,13 +194,13 @@ it seems to hang at a certain point, and you just want to know what it is doing.
 Set the trace level to 1 to enable tracing messages for SOAP calls.
 Set the trace level to 2 to dump the complete XML of all SOAP results.
 
-=head3 Syntax
+B<Syntax>
 
     my $sn = ServiceNow($instancename, $username, $password);
     my $sn = ServiceNow($instanceurl, $username, $password);
     my $sn = ServiceNow($instancename, $username, $password, $tracelevel);
     
-=head3 Examples
+B<Examples>
 
 The following two statements are equivalent.
 
@@ -212,6 +210,8 @@ The following two statements are equivalent.
 Tracing of Web Services calls can be enabled by passing in a fourth parameter.
 
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password, 1);
+
+=head1 ServiceNow::SOAP::Session
 
 =cut
 
@@ -240,7 +240,7 @@ sub new {
 
 =head2 connect
 
-=head3 Description
+B<Description>
 
 Use of this function is optional, but sometimes you want to know up front
 whether your connection credentials are valid.
@@ -249,7 +249,7 @@ from C<sys_user> using C<getRecords>, and trapping the error.
 If successful, the session object is returned.
 If unsuccessful, null is returned and the error message is in $@.
 
-=head3 Syntax
+B<Syntax>
 
     my $sn = ServiceNow($instancename, $username, $password)->connect()
         or die "Unable to connect to $instancename: $@";
@@ -271,16 +271,17 @@ sub connect {
 
 =head2 table
 
-=head3 Description
+B<Description>
 
 Used to obtain a Table object.  
-The Table object is subsequently used for L</TABLE METHODS> described below.
+The Table object is subsequently used for 
+L</ServiceNow::SOAP::Table> methods described below.
 
-=head3 Syntax
+B<Syntax>
 
     my $table = $sn->table($tablename);
 
-=head3 Example
+B<Example>
 
     my $computer_tbl = $sn->table("cmdb_ci_computer");
     
@@ -299,13 +300,58 @@ sub setTrace {
     return $self;
 }
 
+sub traceBefore {
+    my ($self, $trace, $methodname) = @_;
+    return unless $trace;
+    my $tablename = $self->{name};
+    $| = 1;
+    print "$methodname...";
+    $startTime = Time::HiRes::time();
+}
+
+sub traceAfter {
+    my ($self, $trace, $client, $message, $content) = @_;
+    return unless $trace;
+    my $finishTime = Time::HiRes::time();
+    my $elapsed = $finishTime - $startTime;
+    print sprintf(" %.2fs ", $elapsed), $message, "\n";
+    if ($trace > 1) {
+        print defined $content ? $content : 
+            $client->transport()->http_response()->content(),
+            "\n";
+    }
+}
+
+=head2 call
+
+=cut
+
+sub call {
+    my $self = shift;
+    my $function = shift;
+    my $trace = $self->{trace};
+    my $baseurl = $self->{url};
+    my $endpoint = "$baseurl/$function.do?SOAP";
+    my $cookie_jar = $self->{cookie_jar};
+    my $endpoint = "$baseurl/$function.do?SOAP";
+    my $client = SOAP::Lite->proxy($endpoint, cookie_jar => $cookie_jar);
+    my @params = ServiceNow::SOAP::Table::_soapParams(@_);
+    $self->traceBefore($trace, $function);
+    $context = $self;
+    my $som = $client->call('execute' => @params);
+    Carp::croak $som->faultdetail if $som->fault;
+    $self->traceAfter($trace, $client);
+    my $response = $som->body->{executeResponse};
+    return (ref $response eq 'HASH') ? %$response : ();
+}
+
 =head2 saveSession
 
-=head3 Description
+B<Description>
 
 Saves the session information to a file.  See L</loadSession>.
 
-=head3 Syntax
+B<Syntax>
 
     $sn->saveSession($filename);
     
@@ -319,7 +365,7 @@ sub saveSession {
 
 =head2 loadSession
 
-=head3 Description
+B<Description>
 
 Loads the session information from a file.
 This may be required if you are running the same perl script over and over
@@ -327,7 +373,7 @@ This may be required if you are running the same perl script over and over
 and you do not want to establish a separate ServiceNow session
 each time the script is run.
 
-=head3 Syntax
+B<Syntax>
 
     $sn->loadSession($filename);
     
@@ -346,9 +392,14 @@ sub lookup {
     return $rec->{sys_id};
 }
 
-=head1 TABLE METHODS
+=head1 ServiceNow::SOAP::Table
 
-Refer to L</table> function above for instructions on obtaining a reference to a Table object.
+=head2 Description
+
+A Table object holds the URI for a SOAP endpoint
+and the corresponding SOAP::Lite object.
+To obtain a Table object,
+use the L</table> function describe above.
 
 =cut
 
@@ -429,40 +480,27 @@ sub callMethod {
     return $som;
 }
 
-our $startTime;
-
 sub traceBefore {
     my ($self, $methodname) = @_;
     my $trace = $self->{trace};
     return unless $trace;
+    my $session = $self->{session};
     my $tablename = $self->{name};
-    $| = 1;
-    print "$tablename $methodname...";
-    $startTime = Time::HiRes::time();
-}
-
-sub traceAfterContent {
-    my $self = shift;
-    my $content = shift;
-    my $trace = $self->{trace};
-    return unless $trace;
-    my $finishTime = Time::HiRes::time();
-    my $elapsed = $finishTime - $startTime;
-    print sprintf(" %.2fs ", $elapsed), @_, "\n";
-    if ($trace > 1) {
-        $content = $self->{client}->transport()->http_response()->content() unless $content;
-        print $content, "\n";
-    }
+    $session->traceBefore($trace, "$tablename $methodname");
 }
 
 sub traceAfter {
-    my $self = shift;
-    $self->traceAfterContent('', @_);
+    my ($self, $message, $content) = @_;
+    my $trace = $self->{trace};
+    return unless $trace;
+    my $session = $self->{session};
+    my $client = $self->{client};
+    $session->traceAfter($trace, $message, $client, $content);
 }
 
 =head2 get
 
-=head3 Description
+B<Description>
 
 Retrieves a single record.  The result is returned as a reference to a hash.
 
@@ -472,12 +510,12 @@ For additional information
 refer to the ServiceNow documentation on the 
 L<"get" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#get>.
 
-=head3 Syntax
+B<Syntax>
 
     $rec = $table->get(sys_id => $sys_id);
     $rec = $table->get($sys_id);
 
-=head3 Example
+B<Example>
     
     my $rec = $table->get($sys_id);
     print $rec->{name};
@@ -498,21 +536,21 @@ sub get {
 
 =head2 getKeys
 
-=head3 Description
+B<Description>
 
 Returns a list of keys.
-Note that this method returns a list of keys, B<NOT> a comma delimited list.
+Note that this method returns a list of keys, B<NOT> a comma delimited string.
 
 For additional information on available parameters
 refer to the ServiceNow documentation on the 
 L<"getKeys" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getKeys>.
 
-=head3 Syntax
+B<Syntax>
 
     @keys = $table->getKeys(%parameters);
     @keys = $table->getKeys($encodedquery);
 
-=head3 Examples
+B<Examples>
 
     my $cmdb_ci_computer = $sn->table("cmdb_ci_computer");
     
@@ -535,9 +573,9 @@ sub getKeys {
 
 =head2 getRecords
 
-=head3 Description
+B<Description>
 
-Returns a list of records. Actually, it returns a list of hashes.
+Returns a list of records. Actually, it returns a list of hash references.
 You may pass this function either a single encoded query,
 or a list of name/value pairs.
 
@@ -549,16 +587,15 @@ B<Important Note>: This method will return at most 250 records, unless
 you specify a C<__limit> parameter as documented in the ServiceNow wiki under
 L<Extended Query Parameters|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters>.
 
-=head3 Syntax
+B<Syntax>
 
     @recs = $table->getRecords(%parameters);
     @recs = $table->getRecords($encodedquery);
 
-=head3 Example
+B<Example>
 
     my $sys_user_group = $sn->table("sys_user_group");
-    my @grps = $sys_user_group->getRecords(
-        active => true, __limit => 500, __order_by => "name");
+    my @grps = $sys_user_group->getRecords(active => true, __limit => 500, __order_by => "name");
     foreach my $grp (@grps) {
         print $grp->{name}, "\n";
     }
@@ -585,18 +622,18 @@ sub getRecords {
 
 =head2 getRecord
 
-=head3 Description
+B<Description>
 
 Returns a single qualifying records.  
 Returns null if there are no qualifying records.
 Dies if there are multiple qualifying records.
 
-=head3 Syntax
+B<Syntax>
 
     $rec = $table->getRecord(%parameters);
     $rec = $table->getRecord($encodedquery);
     
-=head3 Example
+B<Example>
 
     my $number = "CHG12345";
     my $chgRec = $sn->table("change_request")->getRecord(number => $number);
@@ -627,7 +664,7 @@ sub getRecord {
 
 =head2 count
 
-=head3 Description
+B<Description>
 
 Counts the number of records in a table, 
 or the number of records that match a set of parameters.
@@ -635,13 +672,13 @@ or the number of records that match a set of parameters.
 This method requres installation of the
 L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#aggregate>.
 
-=head3 Syntax 
+B<Syntax >
 
     my $count = $table->count();
     my $count = $table->count(%parameters);
     my $count = $table->count($encodedquery);
 
-=head3 Examples
+B<Examples>
 
 Count the total number of users:
 
@@ -666,7 +703,7 @@ sub count {
 
 =head2 insert
 
-=head3 Description
+B<Description>
 
 Inserts a record.
 In a scalar context, this function returns a sys_id only.
@@ -676,12 +713,12 @@ For information on available parameters
 refer to the ServiceNow documentation on the 
 L<"insert" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#insert>.
 
-=head3 Syntax
+B<Syntax>
 
     my $sys_id = $table->insert(%values);
     my %result = $table->insert(%values);
     
-=head3 Examples
+B<Examples>
 
     my $incident = $sn->table("incident");
 
@@ -727,14 +764,14 @@ sub insert {
 
 =head2 update
 
-=head3 Description
+B<Description>
 
 Updates a record.
 For information on available parameters
 refer to the ServiceNow documentation on the 
 L<"update" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#update>.
 
-=head3 Syntax
+B<Syntax>
 
     $table->update(%parameters);
     $table->update($sys_id, %parameters);
@@ -747,7 +784,7 @@ must be the first parameter.
 For reference fields (e.g. assignment_group, assigned_to)
 you may pass in either a sys_id or a display value.
 
-=head3 Examples
+B<Examples>
 
 The following three examples are equivalent.
 
@@ -780,14 +817,14 @@ sub update {
 
 =head2 deleteRecord
 
-=head3 Description
+B<Description>
 
 Deletes a record.
 For information on available parameters
 refer to the ServiceNow documentation on the 
 L<"deleteRecord" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord>.
 
-=head3 Syntax
+B<Syntax>
 
     $table->deleteRecord(sys_id => $sys_id);
     $table->deleteRecord($sys_id);
@@ -807,17 +844,17 @@ sub deleteRecord {
 
 =head2 query
 
-=head3 Description
+B<Description>
 
-This function creates a new Query object
+This function creates a new L<Query|/ServiceNow::SOAP::Query> object
 by calling L</getKeys>.
 
-=head3 Syntax
+B<Syntax>
 
     my $query = $table->query(%parameters);
     my $query = $table->query($encodedquery};
     
-=head3 Example
+B<Example>
 
 The following example builds a list of all Incidents 
 created between 1/1/2014 and 2/1/2014 sorted by creation date/time.
@@ -851,18 +888,19 @@ sub query {
 
 =head2 asQuery
 
-=head3 Description
+B<Description>
 
-This function creates a new Query object from a list of keys.
+This function creates a new L<Query|/ServiceNow::SOAP::Query> object
+from a list of keys.
 It does not make any Web Services calls.
 It simply makes a copy of the list.
 Each item in the list must be a sys_id for the respective table.
 
-=head3 Syntax
+B<Syntax>
 
     my $query = $table->asQuery(@keys);
 
-=head3 Example
+B<Example>
 
 In this example, we assume that C<@incRecs> contains an array of C<incident> records
 from a previous query.
@@ -894,7 +932,7 @@ sub asQuery {
     
 =head2 attachFile
 
-=head3 Description
+B<Description>
 
 If you are using Perl to create incident tickets,
 then you may have a requirement to attach files to those tickets.
@@ -918,11 +956,11 @@ assume that the attachment name is the same as the file name.
 
 This function will die if the file cannot be read.
 
-=head3 Syntax
+B<Syntax>
 
     $table->attachFile($sys_id, $filename, $mime_type, $attachment_name);
 
-=head3 Example
+B<Example>
 
     $incident->attachFile($sys_id, "screenshot.png", "image/png");
     
@@ -938,13 +976,14 @@ sub attachFile {
     my $session = $self->{session};
     my $ecc_queue = $self->{ecc_queue} ||
         ($self->{ecc_queue} = $session->table('ecc_queue'));
-    open(FILE, $filename) or die "Unable to open \"$filename\"\n$!";
+    open my $fh, '<', $filename 
+        or die "Unable to open \"$filename\"\n$!";
     my ($buf, $base64);
     # encode in multiples of 57 bytes to ensure no padding in the middle
-    while (read(FILE, $buf, 60*57)) {
+    while (read $fh, $buf, 60*57) {
         $base64 .= MIME::Base64::encode_base64($buf);
     }
-    close FILE;
+    close $fh;
     my $tablename = $self->{name};
     my $sysid = $ecc_queue->insert(
         topic => 'AttachmentCreator',
@@ -957,7 +996,7 @@ sub attachFile {
 
 =head2 getVariables
 
-=head3 Description
+B<Description>
 
 This function returns a list of hashes 
 of the variables attached to a Requested Item (RITM).
@@ -992,12 +1031,12 @@ order - Order (useful for sorting).
 
 =back
 
-=head3 Syntax
+B<Syntax>
 
     $sc_req_item = $sn->table("sc_req_item");
     @vars = $sc_req_item->getVariables($sys_id);
     
-=head3 Example
+B<Example>
 
     my $sc_req_item = $sn->table("sc_req_item");
     my $ritmRec = $sc_req_item->getRecord(number => $ritm_number);
@@ -1044,7 +1083,7 @@ sub getVariables {
 
 =head2 setDV
 
-=head3 Description
+B<Description>
 
 Used to enable (or disable) display values in queries.
 All subsequent calls to L</get>, L</getRecords> or L</getRecord> 
@@ -1054,13 +1093,13 @@ This function returns the modified Table object.
 For additional information regarding display values refer to the ServiceNow documentation on
 L<"Return Display Value for Reference Variables"|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables>
 
-=head3 Syntax
+B<Syntax>
 
     $table->setDV("true");
     $table->setDV("all");
     $table->setDv("");  # restore default setting
 
-=head3 Examples
+B<Examples>
 
     my $sys_user_group = $session->table("sys_user_group")->setDV("true");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
@@ -1092,13 +1131,13 @@ sub setChunk {
 
 =head2 setTimeout
 
-=head3 Description
+B<Description>
 
 Set the value of the SOAP Web Services client HTTP timeout.
 In addition, you may need to increase the ServiceNow system property
 C<glide.soap.request_processing_timeout>.
     
-=head3 syntax
+B<syntax>
 
     $table->setTimeout($seconds);
     
@@ -1125,7 +1164,7 @@ sub getSchema {
     $self->traceBefore('wsdl');
     my $response = $useragent->get("$baseurl/$tablename.do?WSDL");
     die $response->status_line unless $response->is_success;
-    $self->traceAfterContent($response->content);
+    $self->traceAfter('', $response->content);
     my $wsdl = XML::Simple::XMLin($response->content);
     $self->{wsdl} = $wsdl;
     return $wsdl;
@@ -1133,17 +1172,18 @@ sub getSchema {
 
 =head2 getFields
 
-=head3 Description
+B<Description>
 
-Returns a hash of the fields in an sequence (complex type) from the WSDL.  
+Returns a hash of the fields in an sequence (complex type) from the WSDL.
+(Actually returns a list of key/value pairs.)
 The hash key is the field name.
 The hash value is the field type.
 
-=head3 Syntax
+B<Syntax>
 
     %fields = $table->getFields($type);
     
-=head3 Example
+B<Example>
 
     my %fields = $sn->table("sys_user_group")->getFields("getRecordsResponse");
     foreach my $name (sort keys %fields) {
@@ -1155,8 +1195,9 @@ The hash value is the field type.
 sub getFields {
     my ($self, $schematype) = @_;
     my $wsdl = $self->getSchema();
-    my $schematype = 'getResponse' unless $schematype;
-    my $elements = $wsdl->{'wsdl:types'}{'xsd:schema'}{'xsd:element'}{$schematype}
+    $schematype = 'getResponse' unless $schematype;
+    my $elements = $wsdl->
+        {'wsdl:types'}{'xsd:schema'}{'xsd:element'}{$schematype}
         {'xsd:complexType'}{'xsd:sequence'}{'xsd:element'};
     my %result = map { $_ => $elements->{$_}{'type'} } keys %{$elements};
     return %result;
@@ -1180,7 +1221,7 @@ sub getExcluded {
     
 package ServiceNow::SOAP::Query;
 
-=head1 QUERY METHODS
+=head1 ServiceNow::SOAP::Query
   
 =head2 Description
 
@@ -1206,7 +1247,7 @@ L</asQuery> simply converts an exsiting list of keys into a Query object.
 
 =back
 
-Once constructed, the L<fetch|/fetch> and L<fetchAll|/fetchAll> functions
+Once constructed, the L</fetch> and L</fetchAll> functions
 can be used to get the actual records in chunks.
 
 =head2 Example
@@ -1238,7 +1279,7 @@ records to create a new list of sys_ids
 C<@childKeys> now contains a lists of sys_ids for configuration items.
 We convert this list of keys into a query object
 and fetch the records from the C<cmdb_ci> table.
-If there are more than 200 records, C<fetchAll> will loop internally 
+If there are more than 250 records, C<fetchAll> will loop internally 
 until all records have been retrieved.
     
     @childRecs = $cmdb_ci->asQuery(@childKeys)->fetchAll();
@@ -1260,11 +1301,10 @@ sub new {
 
 =head2 fetch
 
-=head3 Description
+B<Description>
 
 Fetch the next chunk of records from a table.
-In a list context it returns a list of hashes.
-In a scalar context it returns a reference to an array of hashes.
+Returns a list of hashes.
 
 This function calls L</getRecords> to retrieve the records.
 An optional parameter allows specification of the number of records to be retrieved.
@@ -1272,12 +1312,12 @@ If not specified, then the number of records will be based on
 the default chunk size for this Query object.
 If there are no remaining records, then an empty list will be returned.
 
-=head3 Syntax
+B<Syntax>
     
     my @recs = $query->fetch();
     my @recs = $query->fetch($numrecs);
 
-=head3 Example
+B<Example>
 
 This example prints the names of all active users.
 Each call to L</getRecords> returns up to 100 users.
@@ -1307,28 +1347,28 @@ sub fetch {
         @result = $table->getRecords(__encoded_query => $encodedquery, %params);
         $self->{index} = $last + 1;
     }
-    return wantarray ? @result : \@result;
+    return @result;
 }
 
 =head2 fetchAll
 
-=head3 Description
+B<Description>
 
 Fetch all the records in a Query by calling L</fetch> repeatedly
 until there are no more records.
-In a list context it returns a list of hashes.
+Returns a list of hashes.
 In a scalar context it returns a reference to an array of hashes.
 
-=head3 Syntax
+B<Syntax>
 
     my @recs = $query->fetchAll();
     my @recs = $query->fetchAll($chunkSize);
     
-=head3 Example
+B<Example>
 
 This example prints the names of all active users.
-Each call to L</getRecords> returns up to 200 users
-since no chunk size was specified and the default is 200.
+Each call to L</getRecords> returns up to 250 users
+since no chunk size was specified and the default is 250.
 
     my @recs = $sn->table("sys_user")->query(active => "true", __order_by => "name")->fetchAll();
     foreach my $rec (@recs) {
@@ -1341,16 +1381,15 @@ sub fetchAll {
     my ($self, $chunk) = @_;
     $chunk = $self->{chunk} unless $chunk;
     my @result = ();
-    my $recs;
-    while ($recs = $self->fetch($chunk) and @$recs > 0) {
-        push @result, @$recs;
+    while (my @recs = $self->fetch($chunk)) {
+        push @result, @recs;
     }
-    return wantarray ? @result : \@result;    
+    return @result; 
 }
 
 =head2 setColumns
 
-=head3 Description
+B<Description>
 
 Restricts the list of columns that will be returned.
 Returns a reference to the modified Query object.
@@ -1366,12 +1405,12 @@ extended query parameter.
 By restricting the results to the needed columns, 
 it is possible to significantly reduce the time required for large queries.
 
-=head3 Syntax
+B<Syntax>
 
     $query->setColumns(@list_of_columns);
     $query->setColumns($comma_delimited_list_of_columns);
     
-=head3 Example
+B<Example>
 
     my $tbl = $sn->table("cmdb_ci_computer");
     my $qry = $tbl->query()->setColumns(qw(
