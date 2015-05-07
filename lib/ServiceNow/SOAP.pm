@@ -261,7 +261,7 @@ sub connect {
     my $username = $self->{user};
     my $user_tbl = $self->table('sys_user');
     my @recs;
-    eval { @recs = $user_tbl->getRecords(username => $username) };
+    eval { @recs = $user_tbl->getRecords(user_name => $username) };
     return 0 if $@;
     return 0 unless scalar(@recs) == 1;
     my $rec = $recs[0];
@@ -495,7 +495,7 @@ sub traceAfter {
     return unless $trace;
     my $session = $self->{session};
     my $client = $self->{client};
-    $session->traceAfter($trace, $message, $client, $content);
+    $session->traceAfter($trace, $client, $message, $content);
 }
 
 =head2 get

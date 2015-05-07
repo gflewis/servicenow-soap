@@ -4,13 +4,16 @@ use ServiceNow::SOAP;
 use lib 't';
 use TestUtil;
 
-if (TestUtil::config) { plan tests => 7 } else { plan skip_all => "no config" };
+if (TestUtil::config) { plan tests => 8 } 
+else { plan skip_all => "no config" };
 my $instance = TestUtil::config->{instance};
 my $user = TestUtil::config->{username};
 my $pass = TestUtil::config->{password};
 BAIL_OUT "not initialized" unless $instance;
 
-my $sn = ServiceNow($instance, $user, $pass, 1);
+my $sn = ServiceNow($instance, $user, $pass, 1)->connect()
+    or BAIL_OUT "Unable to connect";
+ok ($sn, "connection successful");
 my $sys_user = $sn->table("sys_user");
 ok ($sys_user, "table method appears to work");
 my $userrec = $sys_user->getRecord(user_name => $user);

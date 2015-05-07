@@ -4,9 +4,14 @@ use Test::More;
 use lib 't';
 use TestUtil;
 
-if (TestUtil::config) { plan tests => 1 } else { plan skip_all => "no config" };
+if (TestUtil::config) { plan tests => 2 } 
+else { plan skip_all => "no config" };
+my $username = TestUtil::getUsername();
 my $sn = TestUtil::getSession();
 my $tbl = $sn->table('sys_user');
+
+my $rec = $tbl->getRecord(user_name => $username);
+ok ($rec, "getRecord for single record");
 eval { my $rec = $tbl->getRecord(active => 'true') };
-ok ($@, "get method for all active users threw exception (more than one)");
+ok ($@, "getRecord for multiple records threw exception");
 1;
