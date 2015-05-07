@@ -10,7 +10,7 @@ unless (TestUtil::config) { plan skip_all => "no config" };
 my $sn = TestUtil::getSession();
 my $tbl = $sn->table("sys_user_group");
 my $qry = $tbl->query(active => "true", __order_by => "name");
-$qry->setColumns("sys_id,name,sys_updated_on");
+$qry->includeColumns("sys_id,name,sys_updated_on");
 my @recs = $qry->fetch();
 my $count = @recs;
 ok ($count > 5, "$count groups retrieved");

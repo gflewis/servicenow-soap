@@ -1482,6 +1482,9 @@ Giles Lewis
 
 =head1 ACKNOWLEDGEMENTS
 
+Greg George, author of ServiceNow::Simple,
+from which a number of ideas were sourced. 
+
 =head1 LICENSE
 
 This program is free software; you can redistribute it and/or modify it
