@@ -25,15 +25,14 @@
   <li><a href="#ServiceNow::SOAP::Session">ServiceNow::SOAP::Session</a>
     <ul>
       <li><a href="#connect">connect</a></li>
-      <li><a href="#table">table</a></li>
       <li><a href="#call">call</a></li>
+      <li><a href="#table">table</a></li>
       <li><a href="#saveSession">saveSession</a></li>
       <li><a href="#loadSession">loadSession</a></li>
     </ul>
   </li>
   <li><a href="#ServiceNow::SOAP::Table">ServiceNow::SOAP::Table</a>
     <ul>
-      <li><a href="#Description">Description</a></li>
       <li><a href="#get">get</a></li>
       <li><a href="#getKeys">getKeys</a></li>
       <li><a href="#getRecords">getRecords</a></li>
@@ -48,16 +47,15 @@
       <li><a href="#getVariables">getVariables</a></li>
       <li><a href="#setDV">setDV</a></li>
       <li><a href="#setTimeout">setTimeout</a></li>
-      <li><a href="#getFields">getFields</a></li>
+      <li><a href="#getColumns">getColumns</a></li>
     </ul>
   </li>
   <li><a href="#ServiceNow::SOAP::Query">ServiceNow::SOAP::Query</a>
     <ul>
-      <li><a href="#Description1">Description</a></li>
-      <li><a href="#Example">Example</a></li>
       <li><a href="#fetch">fetch</a></li>
       <li><a href="#fetchAll">fetchAll</a></li>
-      <li><a href="#setColumns">setColumns</a></li>
+      <li><a href="#excludeColumns">excludeColumns</a></li>
+      <li><a href="#includeColumns">includeColumns</a></li>
     </ul>
   </li>
   <li><a href="#AUTHOR">AUTHOR</a></li>
@@ -216,8 +214,6 @@
 
 <h2 id="connect">connect</h2>
 
-<p><b>Description</b></p>
-
 <p>Use of this function is optional, but sometimes you want to know up front whether your connection credentials are valid. This function tests them by attempting to get the user&#39;s profile from <code>sys_user</code> using <code>getRecords</code>, and trapping the error. If successful, the session object is returned. If unsuccessful, null is returned and the error message is in $@.</p>
 
 <p><b>Syntax</b></p>
@@ -225,9 +221,25 @@
 <pre><code>    my $sn = ServiceNow($instancename, $username, $password)-&gt;connect()
         or die &quot;Unable to connect to $instancename: $@&quot;;</code></pre>
 
-<h2 id="table">table</h2>
+<h2 id="call">call</h2>
 
-<p><b>Description</b></p>
+<p>This function calls a <a href="http://wiki.servicenow.com/index.php?title=Scripted_Web_Services">Scripted Web Service</a>. The input parameters can be passed in as list of key/value pairs or as a hash reference. In a list context this function will return a list of key/value pairs. In a scalar context it will return a hash reference.</p>
+
+<p>Use of this function requires the <code>soap_script</code> role and activation of the &quot;Web Services Provider - Scripted&quot; plugin.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    my %outputs = $sn-&gt;call($name, %inputs);
+    my $outputs = $sn-&gt;call($name, $inputs);</code></pre>
+
+<p><b>Example</b></p>
+
+<pre><code>    my %outputs = $sn-&gt;call(&#39;OrderBlackBerry&#39;,
+        phone_number =&gt; &#39;555-555-5555&#39;,
+        requested_for =&gt; &#39;Fred Luddy&#39;);
+    print &quot;created request &quot;, $outputs{request_number}, &quot;\n&quot;;</code></pre>
+
+<h2 id="table">table</h2>
 
 <p>Used to obtain a Table object. The Table object is subsequently used for <a href="#ServiceNow::SOAP::Table">&quot;ServiceNow::SOAP::Table&quot;</a> methods described below.</p>
 
@@ -239,8 +251,6 @@
 
 <pre><code>    my $computer_tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
     </code></pre>
-
-<h2 id="call">call</h2>
 
 <h2 id="saveSession">saveSession</h2>
 
@@ -266,15 +276,13 @@
 
 <h1 id="ServiceNow::SOAP::Table">ServiceNow::SOAP::Table</h1>
 
-<h2 id="Description">Description</h2>
+<p>Table objects are used for ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API">Direct Web Services API</a>. A Table object holds the URI for a SOAP endpoint and the corresponding SOAP::Lite object.</p>
 
-<p>A Table object holds the URI for a SOAP endpoint and the corresponding SOAP::Lite object. To obtain a Table object, use the <a href="#table">&quot;table&quot;</a> function describe above.</p>
+<p>To obtain a Table object, use the <a href="#table">&quot;table&quot;</a> function describe above.</p>
 
 <h2 id="get">get</h2>
 
-<p><b>Description</b></p>
-
-<p>Retrieves a single record. The result is returned as a reference to a hash.</p>
+<p>This functino retrieves a single record. The result is returned as a reference to a hash.</p>
 
 <p>If no matching record is found then null is returned.</p>
 
@@ -293,9 +301,9 @@
 
 <h2 id="getKeys">getKeys</h2>
 
-<p><b>Description</b></p>
+<p>This function returns a list of keys.</p>
 
-<p>Returns a list of keys. Note that this method returns a list of keys, <b>NOT</b> a comma delimited string.</p>
+<p>Note that this method returns a list of keys, <b>NOT</b> a comma delimited string.</p>
 
 <p>For additional information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getKeys">&quot;getKeys&quot; Direct SOAP API method</a>.</p>
 
@@ -315,9 +323,7 @@
 
 <h2 id="getRecords">getRecords</h2>
 
-<p><b>Description</b></p>
-
-<p>Returns a list of records. Actually, it returns a list of hash references. You may pass this function either a single encoded query, or a list of name/value pairs.</p>
+<p>This function returns a list of records. Actually, it returns a list of hash references. You may pass this function either a single encoded query, or a list of name/value pairs.</p>
 
 <p>For additional information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#getRecords">&quot;getRecords&quot; Direct SOAP API method</a>.</p>
 
@@ -339,9 +345,7 @@
 
 <h2 id="getRecord">getRecord</h2>
 
-<p><b>Description</b></p>
-
-<p>Returns a single qualifying records. Returns null if there are no qualifying records. Dies if there are multiple qualifying records.</p>
+<p>This function returns a single qualifying records. The function returns null if there are no qualifying records. The function will <b>die</b> if there are multiple qualifying records.</p>
 
 <p><b>Syntax</b></p>
 
@@ -486,8 +490,6 @@
 
 <h2 id="query">query</h2>
 
-<p><b>Description</b></p>
-
 <p>This function creates a new <a href="#ServiceNow::SOAP::Query">Query</a> object by calling <a href="#getKeys">&quot;getKeys&quot;</a>.</p>
 
 <p><b>Syntax</b></p>
@@ -508,8 +510,6 @@
 
 <h2 id="asQuery">asQuery</h2>
 
-<p><b>Description</b></p>
-
 <p>This function creates a new <a href="#ServiceNow::SOAP::Query">Query</a> object from a list of keys. It does not make any Web Services calls. It simply makes a copy of the list. Each item in the list must be a sys_id for the respective table.</p>
 
 <p><b>Syntax</b></p>
@@ -518,7 +518,7 @@
 
 <p><b>Example</b></p>
 
-<p>In this example, we assume that <code>@incRecs</code> contains an array of <code>incident</code> records from a previous query. We need an array of <code>sys_user_group</code> records for all referenced assignment groups. We use <code>map</code> to extract a list of assignment group keys from the <code>@incRecs</code>; <code>grep</code> to discard the blanks; and <code>uniq</code> to discard the duplicates. <code>@grpKeys</code> contains the list of <code>sys_user_group</code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a> and <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
+<p>In this example, we assume that <code>@incRecs</code> contains an array of <code>incident</code> records from a previous query. We need an array of <code>sys_user_group</code> records for all referenced assignment groups. We use <code>map</code> to extract a list of assignment group keys from the <code>@incRecs</code>; <code>grep</code> to discard the blanks; and <code>uniq</code> to discard the duplicates. <code>@grpKeys</code> contains the list of <code>sys_user_group</code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a>. <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
 
 <pre><code>    use List::MoreUtils qw(uniq);
 
@@ -532,7 +532,7 @@
 
 <p>If you are using Perl to create incident tickets, then you may have a requirement to attach files to those tickets.</p>
 
-<p>This function implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The function requires insert permissions on the <code>ecc_queue</code> table.</p>
+<p>This function implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The function requires <code>soap_ecc</code> role.</p>
 
 <p>You will need to specify a MIME type. If no type is specified, this function will use a default type of &quot;text/plain&quot; For a list of MIME types, refer to <a href="http://en.wikipedia.org/wiki/Internet_media_type">http://en.wikipedia.org/wiki/Internet_media_type</a>.</p>
 
@@ -629,29 +629,18 @@
 <pre><code>    $table-&gt;setTimeout($seconds);
     </code></pre>
 
-<h2 id="getFields">getFields</h2>
+<h2 id="getColumns">getColumns</h2>
 
-<p><b>Description</b></p>
-
-<p>Returns a hash of the fields in an sequence (complex type) from the WSDL. (Actually returns a list of key/value pairs.) The hash key is the field name. The hash value is the field type.</p>
+<p>Returns a list of the columns in a table.</p>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    %fields = $table-&gt;getFields($type);
+<pre><code>    @columns = $table-&gt;getColumns();
     </code></pre>
-
-<p><b>Example</b></p>
-
-<pre><code>    my %fields = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;getFields(&quot;getRecordsResponse&quot;);
-    foreach my $name (sort keys %fields) {
-        print &quot;name=$name type=$fields{$name}\n&quot;;
-    }</code></pre>
 
 <h1 id="ServiceNow::SOAP::Query">ServiceNow::SOAP::Query</h1>
 
-<h2 id="Description1">Description</h2>
-
-<p>A Query object is essentially a list of keys (sys_ids) for a particular table, and a pointer to the current position in that list. Query objects and the related functions implement the ServiceNow best practice recommendations for using Web Services to query large tables as documented here: <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries</a>.</p>
+<p>A Query object is essentially a list of keys (sys_ids) for a particular table, and a pointer to the current position in that list. Query objects and the related functions implement the ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">best practice recommendation</a>. for using Web Services to retrieve a large number of records.</p>
 
 <p>To construct a new Query object use the <a href="#query">&quot;query&quot;</a> or <a href="#asQuery">&quot;asQuery&quot;</a> Table method.</p>
 
@@ -667,7 +656,7 @@
 
 <p>Once constructed, the <a href="#fetch">&quot;fetch&quot;</a> and <a href="#fetchAll">&quot;fetchAll&quot;</a> functions can be used to get the actual records in chunks.</p>
 
-<h2 id="Example">Example</h2>
+<p><b>Example</b></p>
 
 <p>This example illustrates the use of Query objects to traverse the <code>cmdb_rel_ci</code> table. The example involves two tables: <code>cmdb_ci</code> and <code>cmdb_rel_ci</code>.</p>
 
@@ -694,8 +683,6 @@
 
 <h2 id="fetch">fetch</h2>
 
-<p><b>Description</b></p>
-
 <p>Fetch the next chunk of records from a table. Returns a list of hashes.</p>
 
 <p>This function calls <a href="#getRecords">&quot;getRecords&quot;</a> to retrieve the records. An optional parameter allows specification of the number of records to be retrieved. If not specified, then the number of records will be based on the default chunk size for this Query object. If there are no remaining records, then an empty list will be returned.</p>
@@ -718,8 +705,6 @@
 
 <h2 id="fetchAll">fetchAll</h2>
 
-<p><b>Description</b></p>
-
 <p>Fetch all the records in a Query by calling <a href="#fetch">&quot;fetch&quot;</a> repeatedly until there are no more records. Returns a list of hashes. In a scalar context it returns a reference to an array of hashes.</p>
 
 <p><b>Syntax</b></p>
@@ -737,26 +722,30 @@
          print $rec-&gt;{name}, &quot;\n&quot;;
     }</code></pre>
 
-<h2 id="setColumns">setColumns</h2>
+<h2 id="excludeColumns">excludeColumns</h2>
 
-<p><b>Description</b></p>
+<p>This function limits the list of columns that will be returned for any subsequent calls to &lt;/fetch&gt;. You may pass this function either a list of column names, or a string containing a comma delimited list of names. It will override any prior calls to excludeColumns or includeColumns. It returns a reference to the modified Query object.</p>
 
-<p>Restricts the list of columns that will be returned. Returns a reference to the modified Query object.</p>
+<p>By excluding unneeded columns from the query result, it is possible to significantly reduce the time required for large queries.</p>
+
+<h2 id="includeColumns">includeColumns</h2>
+
+<p>This function limits the list of columns that will be returned for any subsequent calls to &lt;/fetch&gt;. You may pass this function either a list of column names, or a string containing a comma delimited list of names. It will override any prior calls to excludeColumns or includeColumns. It returns a reference to the modified Query object.</p>
+
+<p>By limiting the results to the needed columns, it is possible to significantly reduce the time required for large queries.</p>
 
 <p>For some reason the Direct Web Services API allows you to specify a list of columns to be excluded from the query result, but there is no similar capability to specify a list of columns to be included. This function implements the more obviously needed behavior by inverting the list. It uses the WSDL to generate a list of columns returned by <a href="#getRecords">&quot;getRecords&quot;</a>, and subtracts the specified names to create an <code>&quot;__exclude_columns&quot;</code> extended query parameter.</p>
 
-<p>By restricting the results to the needed columns, it is possible to significantly reduce the time required for large queries.</p>
-
 <p><b>Syntax</b></p>
 
-<pre><code>    $query-&gt;setColumns(@list_of_columns);
-    $query-&gt;setColumns($comma_delimited_list_of_columns);
+<pre><code>    $query-&gt;includeColumns(@list_of_columns);
+    $query-&gt;includeColumns($comma_delimited_list_of_columns);
     </code></pre>
 
 <p><b>Example</b></p>
 
 <pre><code>    my $tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
-    my $qry = $tbl-&gt;query()-&gt;setColumns(qw(
+    my $qry = $tbl-&gt;query()-&gt;includeColumns(qw(
         sys_id name sys_class_name 
         operational_status sys_updated_on));
     my @recs = $qry-&gt;fetchAll();    </code></pre>
@@ -766,6 +755,8 @@
 <p>Giles Lewis</p>
 
 <h1 id="ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</h1>
+
+<p>Greg George, author of ServiceNow::Simple, from which a number of ideas were sourced.</p>
 
 <h1 id="LICENSE">LICENSE</h1>
 
