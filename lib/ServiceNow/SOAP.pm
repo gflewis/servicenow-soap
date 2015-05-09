@@ -707,8 +707,8 @@ sub deleteRecord {
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     my %values = @_;
     my $sysid = $values{sys_id};
-    $self->traceBefore("delete $sysid");
-    my $som = $self->callMethod('delete', _params @_);
+    $self->traceBefore("deleteRecord $sysid");
+    my $som = $self->callMethod('deleteRecord', _params @_);
     $self->traceAfter();
     return $self;
 }

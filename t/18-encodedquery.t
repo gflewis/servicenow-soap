@@ -9,22 +9,16 @@ if (TestUtil::config) { plan tests => 2 }
 else { plan skip_all => "no config" };
 
 my $today = today;
+print "today=$today\n";
 
 my $sn = TestUtil::getSession();
 my $incident = $sn->table("incident");
-my $filter = "sys_created_on>=$today";
+my $filter = TestUtil::config->{incident_filter};
 print "filter=$filter\n";
-
 my @recs = $incident->getRecords($filter);
+my $count = @recs;
 
-ok (@recs > 1, "Records retrieved");
-my $tcount = 0;
-foreach my $rec (@recs) {
-    my $number = $rec->{number};
-    my $created = $rec->{sys_created_on};
-    print "$number $created\n";
-    ++$tcount if substr($created, 0, 10) eq $today;
-}
-ok ($tcount eq @recs, "$tcount created today");
+ok ($count >= 50, "At least 50 records retrieved");
+ok ($count < 1000, "Fewer than 1000 records retrieved");
 
 1;

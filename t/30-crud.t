@@ -10,7 +10,7 @@ use TestUtil;
 
 if (TestUtil::config) {
     if (getProp('test_insert')) {
-        plan tests => 8;
+        plan tests => 10;
     }
     else {
         plan skip_all => "test_insert is false";
@@ -28,7 +28,7 @@ ok ($groupName, "assignment group is $groupName");
 my $shortDescription = "Test $timestamp script $0";
 my $fullDescription = "$lorem\n$timestamp";
 
-my $sn = TestUtil::getSessin();
+my $sn = TestUtil::getSession();
 my $incident = $sn->table("incident");
 
 #
@@ -64,6 +64,25 @@ $incident->attachFile($sysid, $attachment, $mimetype);
 $incident->update(sys_id => $sysid, impact => 1);
 my $rec2 = $incident->get($sysid);
 ok ($rec2->{impact} == 1, "updated impact is 1");
+
+#
+# Date filter test (look for records created today)
+#
+my $today = TestUtil::today;
+my $filter = "sys_created_on>=$today";
+print "filter=$filter\n";
+
+my @recs = $incident->getRecords($filter);
+
+ok (@recs > 1, "Records retrieved");
+my $dcount = 0;
+foreach my $rec (@recs) {
+    my $number = $rec->{number};
+    my $created = $rec->{sys_created_on};
+    print "$number $created\n";
+    ++$dcount if substr($created, 0, 10) eq $today;
+}
+ok ($dcount eq @recs, "$dcount created today");
 
 # 
 # Delete the incident
