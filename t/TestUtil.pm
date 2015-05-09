@@ -5,7 +5,7 @@ use ServiceNow::SOAP;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT = qw(config getProp getTimestamp);
+our @EXPORT = qw(config getProp isGUID getTimestamp today);
 
 our $config;
 
@@ -44,6 +44,10 @@ sub isGUID {
 }
 
 sub getTimestamp {
+    return timestamp();
+}
+
+sub timestamp {
 	my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 	my $timestamp = 
 		10000000000 * (1900 + $year) + 
@@ -53,6 +57,20 @@ sub getTimestamp {
 		100 * $min + 
 		$sec;
 	return $timestamp;
+}
+
+sub today {
+	my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
+    return sprintf("%04d-%02d-%02d", 1900 + $year, 1 + $mon, $mday);
+}
+
+sub lorem {
+    my $lorem = <<zzz;
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur efficitur mi nisl, in consectetur tellus pellentesque eu. Aliquam ante purus, consectetur sed laoreet ut, viverra a ligula. 
+
+Nunc congue eros eros, vel egestas urna aliquet sed. Duis euismod tristique nunc, id feugiat lorem mattis id. Etiam sodales congue enim gravida accumsan. Duis vel justo fermentum, laoreet nulla vel, convallis arcu. Aenean ac ex tincidunt, fermentum felis at, condimentum velit.
+zzz
+    return $lorem;
 }
 
 1;

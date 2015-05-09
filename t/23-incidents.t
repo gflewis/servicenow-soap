@@ -29,8 +29,7 @@ foreach my $grp (@grpRecs) {
     my $sysid = $grp->{sys_id};
     my $name = $grp->{name};
     my $mgr = $grp->{manager};
-    print ++$i, ": $sysid $name : $mgr\n";
+    # print ++$i, ": $sysid $name : $mgr\n";
 }
-
 
 1;

@@ -20,26 +20,19 @@ else {
     plan skip_all => "no config";
 }
 
-my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
-my $timestamp =  
-    10000000000 * (1900 + $year) + 100000000 * (1 + $mon) + 1000000 * $mday + 
-    10000 * $hour + 100 * $min + $sec;
-
-my $lorum = <<zzz;
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur efficitur mi nisl, in consectetur tellus pellentesque eu. Aliquam ante purus, consectetur sed laoreet ut, viverra a ligula. 
-
-Nunc congue eros eros, vel egestas urna aliquet sed. Duis euismod tristique nunc, id feugiat lorem mattis id. Etiam sodales congue enim gravida accumsan. Duis vel justo fermentum, laoreet nulla vel, convallis arcu. Aenean ac ex tincidunt, fermentum felis at, condimentum velit.
-zzz
+my $timestamp = TestUtil::getTimestamp();
+my $lorem = TestUtil::lorem();
 
 my $groupName = getProp('group_name');
 ok ($groupName, "assignment group is $groupName");
 my $shortDescription = "Test $timestamp script $0";
-my $fullDescription = "$lorum\n$timestamp";
+my $fullDescription = "$lorem\n$timestamp";
 
-my $incident = TestUtil::getSession()->table("incident");
+my $sn = TestUtil::getSessin();
+my $incident = $sn->table("incident");
 
 #
-# Crete an incident
+# Create an incident
 #
 my %result = $incident->insert(
     short_description => $shortDescription,

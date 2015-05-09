@@ -60,13 +60,17 @@ ServiceNow::SOAP - A better perl API for ServiceNow
     
 =head1 EXAMPLES
 
+Create session and table objects.
+
     use ServiceNow::SOAP;
     
-    my $sn = ServiceNow("mycompany", "soap.perl", $password);
+    my $sn = ServiceNow("mycompany", $username, $password);
     
     my $computer_tbl = $sn->table("cmdb_ci_computer");
+    my $incident_tbl = $sn->table("incident");
 
-    # retrieve a small number of records     
+Retrieve a small number of records.
+ 
     my @recs = $computer_tbl->getRecords(
         "location.name" => "London", 
         "operational_status" => "1",
@@ -76,12 +80,14 @@ ServiceNow::SOAP - A better perl API for ServiceNow
         print $rec->{name}, "\n";
     }
     
-    # count records
+Count records.
+ 
     my $count = $computer_tbl->count(
         "location.name" => "London", 
         "operational_status" => "1");
     
-    # retrieve records in chunks 
+Retrieve records in chunks.
+ 
     my $qry = $computer_tbl->query(
         "location.name" => "London", 
         "operational_status" => "1",
@@ -92,25 +98,29 @@ ServiceNow::SOAP - A better perl API for ServiceNow
         }
     }
     
-    # retrieve all the records in a large table 
-    my $recs = $computer_tbl->query()->fetchAll();
+Retrieve all the records in a large table. 
+ 
+    my @recs = $computer_tbl->query()->fetchAll();
     
-    # insert a record
-    my $incident_tbl = $sn->table("incident");
+Insert a record.
+
     my $sys_id = $incident_tbl->insert(
         assignment_group => "Network Support",
         short_description => $short_description,
         impact => 2);
 
-    # retrieve a single record based on sys_id
+Retrieve a single record based on sys_id.
+
     my $rec = $incident_tbl->get(sys_id => $sys_id);
     print "number=", $rec->{number}, "\n";
 
-    # retrieve a single record based on number
+Retrieve a single record based on number.
+
     my $rec = $incident_tbl->getRecord(number => $number);
     print "sys_id=", $rec->{sys_id}, "\n";
     
-    # update a record
+Update a record.
+
     $incident_tbl->update(
         sys_id => $sys_id,
         assigned_to => "Fred Luddy",
@@ -159,15 +169,6 @@ sub SOAP::Transport::HTTP::Client::get_basic_credentials {
     return $user => $pass;
 }
 
-sub debug {
-    if (@_ && !$_[0]) {
-        SOAP::Lite->import(+trace => '-debug');
-    }
-    else {
-        SOAP::Lite->import(+trace => 'debug')
-    }
-}
-
 # Convert a list of parameters to SOAP::Data
 sub _params {
     my @params;
@@ -175,13 +176,14 @@ sub _params {
     while (scalar(@_) > 1) {
         my $name = shift;
         my $value = shift;
+        warn "Parameter name appears to be a sys_id"
+            if $name =~ /^[0-9A-Fa-f]{32}$/;
         push @params, SOAP::Data->name($name, $value);
     }
     if (@_) {
         # there is one parameter left
         $_ = shift;
-        if ($_ eq '*') { } # ignore an asterisk
-        elsif (/^[0-9A-Fa-f]{32}$/) { 
+        if (/^[0-9A-Fa-f]{32}$/) { 
             # it looks like a sys_id
             push @params, SOAP::Data->name(sys_id => $_); 
         }
@@ -203,21 +205,19 @@ sub ServiceNow {
 
 B<Description>
 
-This function C<ServiceNow>
+This method C<ServiceNow>
 (which is essentially an alias for ServiceNow::SOAP::Session->new()
 is used to obtain a reference to a Session object. 
 The Session object essentially holds the URL and 
 connection credentials for your ServiceNow instance. 
+
 The first argument is the URL or instance name.
 The second argument is the user name.
 The third argument is the password. 
-    
-The fourth (optional) argument to this method is an integer trace level
-which can be helpful for debugging.
-Sometimes, when you are developing a new script,
-it seems to hang at a certain point, and you just want to know what it is doing.
-Set the trace level to 1 to enable tracing messages for SOAP calls.
-Set the trace level to 2 to dump the complete XML of all SOAP results.
+
+The fourth (optional) argument is an integer trace level
+which can be helpful for debugging. For details refer to 
+L</DIAGNOSTICS> below.
 
 B<Syntax>
 
@@ -233,6 +233,7 @@ The following two statements are equivalent.
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password);
     
 Tracing of Web Services calls can be enabled by passing in a fourth parameter.
+For details refer to L</DIAGNOSTICS> below.
 
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password, 1);
 
@@ -265,9 +266,9 @@ sub new {
 
 =head2 connect
 
-Use of this function is optional, but sometimes you want to know up front
+Use of this method is optional, but sometimes you want to know up front
 whether your connection credentials are valid.
-This function tests them by attempting to get the user's profile
+This method tests them by attempting to get the user's profile
 from C<sys_user> using C<getRecords>, and trapping the error.
 If successful, the session object is returned.
 If unsuccessful, null is returned and the error message is in $@.
@@ -322,14 +323,14 @@ sub traceAfter {
 
 =head2 call
 
-This function calls a 
+This method calls a 
 L<Scripted Web Service|http://wiki.servicenow.com/index.php?title=Scripted_Web_Services>.
 The input parameters can be passed in as list of key/value pairs
 or as a hash reference.
-In a list context this function will return a list of key/value pairs.
+In a list context this method will return a list of key/value pairs.
 In a scalar context it will return a hash reference.
 
-Use of this function requires the C<soap_script> role and activation of the 
+Use of this method requires the C<soap_script> role and activation of the 
 "Web Services Provider - Scripted" plugin.
 
 B<Syntax>
@@ -365,7 +366,7 @@ sub call {
     $self->traceAfter($trace, $client);
     my $response = $som->body->{executeResponse};
     if (ref $response eq 'HASH') {
-        return wantarray ? %$response : $response;
+        return wantarray ? %{$response} : $response;
     }
     else {  
         return wantarray ? () : undef;
@@ -450,7 +451,7 @@ A Table object holds the URI for a SOAP endpoint
 and the corresponding SOAP::Lite object.
 
 To obtain a Table object,
-use the L</table> function describe above.
+use the L</table> method describe above.
 
 =cut
 
@@ -467,6 +468,10 @@ sub _trunc {
     my ($str, $len) = @_;
     $len = $TRACE_LENGTH unless $len;
     return length($str) < $len ? $str : substr($str, 0, $len - 2) . "..";
+}
+
+sub _params {
+    return ServiceNow::SOAP::_params @_;
 }
 
 sub new {
@@ -502,8 +507,8 @@ sub callMethod {
     $context = $self->{session};
     my $method = SOAP::Data->name($methodname)->attr({xmlns => $xmlns});
     my $client = $self->{client};
-    my @params = ServiceNow::SOAP::_params(@_);
-    my $som = $client->endpoint($endpoint)->call($method => @params);
+    # my @params = ServiceNow::SOAP::_params(@_);
+    my $som = $client->endpoint($endpoint)->call($method => @_);
     Carp::croak $som->faultdetail if $som->fault;        
     return $som;
 }
@@ -526,9 +531,68 @@ sub traceAfter {
     $session->traceAfter($trace, $client, $message, $content);
 }
 
+=head2 columns
+
+This method returns a list of the columns in a table.
+The list is retrieved from the WSDL.
+
+B<Syntax>
+
+    @columns = $table->columns();
+    
+=cut
+
+sub columns {
+    my $self = shift;
+    return @{$self->{columns}} if $self->{columns};
+    my %fields = $self->getFields();
+    my @columns = sort keys %fields;
+    $self->{columns} = \@columns;
+    return @columns;
+}
+
+=head2 count
+
+B<Description>
+
+This method counts the number of records in a table, 
+or the number of records that match a set of parameters.
+
+This method requres installation of the
+L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#aggregate>.
+
+B<Syntax >
+
+    my $count = $table->count();
+    my $count = $table->count(%parameters);
+    my $count = $table->count($encodedquery);
+
+B<Examples>
+
+Count the total number of users:
+
+    my $count = $sn->table("sys_user")->count();
+    
+Count the number of active users:
+
+    my $count = $sn->table("sys_user")->count(active => true);
+    
+=cut
+
+sub count {
+    my $self = shift;
+    my @params = (COUNT => 'sys_id', @_);
+    $self->traceBefore('aggregate count');
+    my $som = $self->callMethod('aggregate' => _params @params);
+    my $count = $som->body->{aggregateResponse}->{aggregateResult}->{COUNT};
+    $self->traceAfter("count=$count");
+    return $count;
+}
+
 =head2 get
 
-This functino retrieves a single record.  The result is returned as a reference to a hash.
+This method retrieves a single record.
+The result is returned as a reference to a hash.
 
 If no matching record is found then null is returned.
 
@@ -553,7 +617,7 @@ sub get {
     # Carp::croak("get $tablename: no parameter") unless @_; 
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     $self->traceBefore('get');
-    my $som = $self->callMethod('get' => @_);
+    my $som = $self->callMethod('get' =>  _params @_);
     $self->traceAfter();
     my $result = $som->body->{getResponse};
     return $result;
@@ -561,7 +625,7 @@ sub get {
 
 =head2 getKeys
 
-This function returns a list of keys.
+This method returns a list of keys.
 
 Note that this method returns a list of keys, B<NOT> a comma delimited string.
 
@@ -587,7 +651,7 @@ B<Examples>
 sub getKeys {
     my $self = shift;
     $self->traceBefore('getKeys');
-    my $som = $self->callMethod('getKeys', @_);
+    my $som = $self->callMethod('getKeys', _params @_);
     my @keys = split /,/, $som->result;
     my $count = @keys;
     $self->traceAfter("$count keys");
@@ -596,8 +660,8 @@ sub getKeys {
 
 =head2 getRecords
 
-This function returns a list of records. Actually, it returns a list of hash references.
-You may pass this function either a single encoded query,
+This method returns a list of records. Actually, it returns a list of hash references.
+You may pass this method either a single encoded query string,
 or a list of name/value pairs.
 
 For additional information on available parameters
@@ -607,6 +671,10 @@ L<"getRecords" Direct SOAP API method|http://wiki.servicenow.com/index.php?title
 B<Important Note>: This method will return at most 250 records, unless
 you specify a C<__limit> parameter as documented in the ServiceNow wiki under
 L<Extended Query Parameters|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters>.
+For reading large amounts of data,
+it is recommended that you use the 
+L<Query Object|/ServiceNow::SOAP::Query> 
+described below.
 
 B<Syntax>
 
@@ -616,7 +684,8 @@ B<Syntax>
 B<Example>
 
     my $sys_user_group = $sn->table("sys_user_group");
-    my @grps = $sys_user_group->getRecords(active => true, __limit => 500, __order_by => "name");
+    my @grps = $sys_user_group->getRecords(
+        active => true, __limit => 500, __order_by => "name");
     foreach my $grp (@grps) {
         print $grp->{name}, "\n";
     }
@@ -626,7 +695,7 @@ B<Example>
 sub getRecords {
     my $self = shift;
     $self->traceBefore('getRecords');
-    my $som = $self->callMethod('getRecords' => @_);
+    my $som = $self->callMethod('getRecords', _params @_);
     my $response = $som->body->{getRecordsResponse};
     unless (ref $response eq 'HASH') {
         $self->traceAfter("0 records");
@@ -643,9 +712,9 @@ sub getRecords {
 
 =head2 getRecord
 
-This function returns a single qualifying records.  
-The function returns null if there are no qualifying records.
-The function will B<die> if there are multiple qualifying records.
+This method returns a single qualifying records.  
+The method returns null if there are no qualifying records.
+The method will B<die> if there are multiple qualifying records.
 
 B<Syntax>
 
@@ -681,51 +750,11 @@ sub getRecord {
     return $recs[0];
 }
 
-=head2 count
-
-B<Description>
-
-Counts the number of records in a table, 
-or the number of records that match a set of parameters.
-
-This method requres installation of the
-L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#aggregate>.
-
-B<Syntax >
-
-    my $count = $table->count();
-    my $count = $table->count(%parameters);
-    my $count = $table->count($encodedquery);
-
-B<Examples>
-
-Count the total number of users:
-
-    my $count = $sn->table("sys_user")->count();
-    
-Count the number of active users:
-
-    my $count = $sn->table("sys_user")->count(active => true);
-    
-=cut
-
-sub count {
-    my $self = shift;
-    my @params = (COUNT => 'sys_id', @_);
-    $self->traceBefore('aggregate count');
-    my $som = $self->callMethod('aggregate' => @params);
-    my $count = $som->body->{aggregateResponse}->{aggregateResult}->{COUNT};
-    $self->traceAfter("count=$count");
-    return $count;
-}
-
 =head2 insert
 
-B<Description>
-
-Inserts a record.
-In a scalar context, this function returns a sys_id only.
-In a list context, this function returns a list of name/value pairs.
+This method inserts a record.
+In a scalar context, this method returns a sys_id only.
+In a list context, this method returns a list of name/value pairs.
 
 For information on available parameters
 refer to the ServiceNow documentation on the 
@@ -773,18 +802,67 @@ you may pass in either a sys_id or a display value.
 sub insert {
     my $self = shift;
     $self->traceBefore('insert');
-    my $som = $self->callMethod('insert' => @_);
+    my $som = $self->callMethod('insert', _params @_);
     my $response = $som->body->{insertResponse};
     my $sysid = $response->{sys_id};
     $self->traceAfter();
     return wantarray ? %{$response} : $sysid;
 }
 
+=head2 insertMultiple
+
+This method inserts multiple records.
+
+The input is an array of hash references.
+It returns an array of hash references.
+
+For additional information 
+refer to the ServiceNow documentation on the 
+L<"insertMultiple" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#insertMultiple>.
+
+B<Syntax>
+
+    my @results = $table->insertMultiple(@records);
+
+B<Example>
+
+    my $incident = $sn->table("incident");
+    my @allrecs;
+    foreach my $descr (@descriptions) {
+        my $newrec = {
+            short_description => $desc,
+            assignment_group => $groupName,
+            description => $desc,
+            impact => 3};
+        push @allrecs, $newrec;
+    }
+    my @results = $incident->insertMultiple(@allrecs);
+    foreach my $result (@results) {
+        print "inserted ", $result->{number}, "\n";
+    }
+
+=cut
+
+sub insertMultiple {
+    my $self = shift;
+    $self->traceBefore('insertMultiple');
+    my @params;
+    foreach my $rec (@_) {
+        Carp::croak "Expected array of hashs" unless ref $rec eq 'HASH';
+        push @params, SOAP::Data->name('record' => $rec);
+    }
+    my $som = $self->callMethod('insertMultiple', @params);
+    my $response = $som->body->{insertMultipleResponse};
+    my $insertResponse = $response->{insertResponse};
+    my @status = @{$insertResponse};
+    my $count = scalar(@status);
+    $self->traceAfter("$count records inserted");
+    return @status;
+}
+
 =head2 update
 
-B<Description>
-
-Updates a record.
+This method updates a record.
 For information on available parameters
 refer to the ServiceNow documentation on the 
 L<"update" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#update>.
@@ -828,7 +906,7 @@ sub update {
     my %values = @_;
     my $sysid = $values{sys_id};
     $self->traceBefore("update $sysid");
-    my $som = $self->callMethod('update' => @_);
+    my $som = $self->callMethod('update', _params @_);
     $self->traceAfter();
     return $self;
 }
@@ -855,14 +933,14 @@ sub deleteRecord {
     my %values = @_;
     my $sysid = $values{sys_id};
     $self->traceBefore("delete $sysid");
-    my $som = $self->callMethod('delete' => @_);
+    my $som = $self->callMethod('delete', _params @_);
     $self->traceAfter();
     return $self;
 }
 
 =head2 query
 
-This function creates a new L<Query|/ServiceNow::SOAP::Query> object
+This method creates a new L<Query|/ServiceNow::SOAP::Query> object
 by calling L</getKeys>.
 
 B<Syntax>
@@ -904,7 +982,7 @@ sub query {
 
 =head2 asQuery
 
-This function creates a new L<Query|/ServiceNow::SOAP::Query> object
+This method creates a new L<Query|/ServiceNow::SOAP::Query> object
 from a list of keys.
 It does not make any Web Services calls.
 It simply makes a copy of the list.
@@ -951,9 +1029,9 @@ B<Description>
 If you are using Perl to create incident tickets,
 then you may have a requirement to attach files to those tickets.
 
-This function implements the
+This method implements the
 L<attachment creator API|http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service>.
-The function requires C<soap_ecc> role.
+The method requires C<soap_ecc> role.
 
 You will need to specify a MIME type.
 If no type is specified,
@@ -1012,7 +1090,7 @@ sub attachFile {
 
 B<Description>
 
-This function returns a list of hashes 
+This method returns a list of hashes 
 of the variables attached to a Requested Item (RITM).
 
 B<Note>: This function currently works only for the C<sc_req_item> table.
@@ -1102,7 +1180,7 @@ B<Description>
 Used to enable (or disable) display values in queries.
 All subsequent calls to L</get>, L</getRecords> or L</getRecord> 
 for this table will be affected.
-This function returns the modified Table object.
+This method returns the modified Table object.
 
 For additional information regarding display values refer to the ServiceNow documentation on
 L<"Return Display Value for Reference Variables"|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables>
@@ -1195,44 +1273,46 @@ sub getFields {
     return %result;
 }
 
-=head2 getColumns
+=head2 except
 
-Returns a list of the columns in a table.
+This method accepts as argument either a list of column names
+or a string containing a comma separated list of column names.
+It returns a comma separated list of the 
+column names which are B<NOT> in the argument list.
 
 B<Syntax>
 
-    @columns = $table->getColumns();
+    my $names = $table->except(@list_of_columns);
+    my $names = $table->except($comma_separated_list_of_columns);
     
+B<Example>
+
+    my $incident = $sn->table("incident");
+    my @recs = $incident->getRecords(
+        __encoded_query => "sys_created_on>=$datetime,
+        __exclude_columns => 
+            $incident->except("sys_id,number,description"),
+        __limit => 250);
+ 
 =cut
 
-sub getColumns {
+sub except {
     my $self = shift;
-    return @{$self->{columns}} if $self->{columns};
-    my %fields = $self->getFields();
-    my @columns = sort keys %fields;
-    $self->{columns} = \@columns;
-    return @columns;
-}
-
-sub getExcluded {
-    my $self = shift;
-    my %names = map { $_ => 1 } @_;
-    my @result = grep { !$names{$_} } $self->getColumns();
-    return @result;
+    my %names = map { $_ => 1 } split /,/, join(',', @_);
+    my @excl = grep { !$names{$_} } $self->columns();
+    return join(',', @excl);
 }
     
 package ServiceNow::SOAP::Query;
 
 =head1 ServiceNow::SOAP::Query
   
-A Query object is essentially a list of keys (sys_ids) for a particular table,
-and a pointer to the current position in that list.
-Query objects and the related functions
-implement the ServiceNow's
-L<best practice recommendation|http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>.
+Query objects and the related functions implement the ServiceNow's
+L<best practice recommendation|http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>
 for using Web Services to retrieve a large number of records.
 
-To construct a new Query object use the L</query> or L</asQuery> Table method.
+A Query object is essentially a list of keys (sys_ids) for a particular table,
+and a pointer to the current position in that list.  To construct a new Query object use the L</query> or L</asQuery> Table method.
 
 =over
 
@@ -1246,7 +1326,7 @@ L</asQuery> simply converts an exsiting list of keys into a Query object.
 
 =back
 
-Once constructed, the L</fetch> and L</fetchAll> functions
+Once the Query is constructed, the L</fetch> and L</fetchAll> functions
 can be used to get the actual records in chunks.
 
 B<Example>
@@ -1298,12 +1378,79 @@ sub new {
     }, $pkg;
 }
 
+=head2 exclude
+
+This method limits the list of columns that will be returned
+for any subsequent calls to L</fetch>.
+
+You may pass this method either a list of column names, 
+or a string containing a comma delimited list of names.
+It will override any prior calls to L</exclude> or L</include>.
+It returns a reference to the modified Query object.
+
+By excluding unneeded columns from the query result, 
+it is possible to significantly reduce the time required for large queries.
+
+=cut
+
+sub exclude {
+    my $self = shift;
+    my $table = $self->{table};
+    my $excl = join(',', @_);
+    $self->{params}{__exclude_columns} = $excl;
+    return $self;
+}
+
+=head2 include
+
+This method limits the list of columns that will be returned
+for any subsequent calls to L</fetch>.
+
+You may pass this method either a list of column names,
+or a string containing a comma delimited list of names.
+It will override any prior calls to L</exclude> or L</include>.
+It returns a reference to the modified Query object.
+
+By limiting the results to the needed columns, 
+it is possible to significantly reduce the time required for large queries.
+
+For some reason the Direct Web Services API allows you to specify a 
+list of columns to be excluded from the query result,
+but there is no similar capability to specify a list of columns to be included.
+This function implements the more obviously needed behavior by inverting the list.
+It uses the WSDL to generate a list of columns returned by L</getRecords>,
+and subtracts the specified names to create an C<"__exclude_columns">
+extended query parameter.
+
+B<Syntax>
+
+    $query->include(@list_of_columns);
+    $query->include($comma_delimited_list_of_columns);
+    
+B<Example>
+
+    my $tbl = $sn->table("cmdb_ci_computer");
+    my $qry = $tbl->query()->include(qw(
+        sys_id name sys_class_name 
+        operational_status sys_updated_on));
+    my @recs = $qry->fetchAll();    
+
+=cut
+
+sub include {
+    my $self = shift;
+    my $table = $self->{table};
+    my $excl = $table->except(split /,/, join(',', @_));
+    $self->exclude($excl);
+    return $self;
+}
+
 =head2 fetch
 
 Fetch the next chunk of records from a table.
 Returns a list of hashes.
 
-This function calls L</getRecords> to retrieve the records.
+This method calls L</getRecords> to retrieve the records.
 An optional parameter allows specification of the number of records to be retrieved.
 If not specified, then the number of records will be based on 
 the default chunk size for this Query object.
@@ -1382,70 +1529,16 @@ sub fetchAll {
     return @result; 
 }
 
-=head2 excludeColumns
+=head2 setChunk
 
-This function limits the list of columns that will be returned
-for any subsequent calls to </fetch>.
-You may pass this function either a list of column names, 
-or a string containing a comma delimited list of names.
-It will override any prior calls to excludeColumns or includeColumns.
-It returns a reference to the modified Query object.
+This method sets the default chunk size
+(number of records per fetch)
+for subsequent calls to L</fetch> or L</fetchAll>.
 
-By excluding unneeded columns from the query result, 
-it is possible to significantly reduce the time required for large queries.
+If B<setChunk> is not specified then 
+the default is 250 records per fetch.
 
 =cut
-
-sub excludeColumns {
-    my $self = shift;
-    my $table = $self->{table};
-    my $excluded = join(',', @_);
-    $self->{params}{__exclude_columns} = $excluded;
-    return $self;
-}
-
-=head2 includeColumns
-
-This function limits the list of columns that will be returned
-for any subsequent calls to </fetch>.
-You may pass this function either a list of column names, 
-or a string containing a comma delimited list of names.
-It will override any prior calls to excludeColumns or includeColumns.
-It returns a reference to the modified Query object.
-
-By limiting the results to the needed columns, 
-it is possible to significantly reduce the time required for large queries.
-
-For some reason the Direct Web Services API allows you to specify a 
-list of columns to be excluded from the query result,
-but there is no similar capability to specify a list of columns to be included.
-This function implements the more obviously needed behavior by inverting the list.
-It uses the WSDL to generate a list of columns returned by L</getRecords>,
-and subtracts the specified names to create an C<"__exclude_columns">
-extended query parameter.
-
-B<Syntax>
-
-    $query->includeColumns(@list_of_columns);
-    $query->includeColumns($comma_delimited_list_of_columns);
-    
-B<Example>
-
-    my $tbl = $sn->table("cmdb_ci_computer");
-    my $qry = $tbl->query()->includeColumns(qw(
-        sys_id name sys_class_name 
-        operational_status sys_updated_on));
-    my @recs = $qry->fetchAll();    
-
-=cut
-
-sub includeColumns {
-    my $self = shift;
-    my $table = $self->{table};
-    my @exclude = $table->getExcluded(split /,/, join(',', @_));
-    $self->{params}{__exclude_columns} = join(',', @exclude);
-    return $self;
-}
 
 sub setChunk {
     my $self = shift;
@@ -1464,10 +1557,30 @@ sub setIndex {
     return $self;
 }
 
+=head2 getCount 
+
+This method returns the total number of keys in the Query.
+
+=cut
+
 sub getCount {
     my $self = shift;
     return $self->{count};
 }
+
+=head2 getKeys
+
+This method returns a list of the keys included in the Query.
+
+B<Example>
+
+The following example calls </getKeys> to create a new query,
+and then makes of copy of the query using the same list of keys.
+
+    my $query1 = $table->query($encoded_query);
+    my $query2 = $table->asQuery($query1->getKeys());
+
+=cut
 
 sub getKeys {
     my $self = shift;
@@ -1475,6 +1588,26 @@ sub getKeys {
 }
 
 1;
+
+=head1 DIAGNOSTICS
+
+The fourth (optional) argument to the L</ServiceNow> function is an integer trace level
+which can be helpful for debugging.
+Sometimes, when you are developing a new script,
+it seems to hang at a certain point, and you just want to know what it is doing.
+Set the trace level to 1 to enable tracing messages for SOAP calls.
+Set the trace level to 2 to dump the complete XML of all SOAP results.
+Set the trace level to 0 (default) to disable this feature.
+
+You can also enable or disable tracing for a table by calling C<setTrace> on the object.
+
+    $table->setTrace(2);
+    
+If you want even more, then add the following to your code.
+This will cause SOAP:Lite to dump the HTTP headers
+and contens for all messages, both sent and received.
+
+    SOAP::Lite->import(+trace => 'debug');
 
 =head1 AUTHOR
 
