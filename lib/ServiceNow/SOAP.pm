@@ -26,34 +26,37 @@ ServiceNow::SOAP - A better perl API for ServiceNow
 =head1 SYNOPSIS
 
     # return a reference to a session object
-    my $sn = ServiceNow($instancename, $username, $password);
+    $sn = ServiceNow($instancename, $username, $password);
     
     # return a reference to a table object
-    my $table = $sn->table($tablename);
+    $table = $sn->table($tablename);
 
     # count records
-    my $count = $table->count(%parameters);
+    $count = $table->count(%parameters);
     
     # return a list of sys_ids
-    my @keys = $table->getKeys(%parameters);
+    @keys = $table->getKeys(%parameters);
     
     # return a single record as a hash
-    my $rec = $table->get(sys_id => $sys_id);
+    $rec = $table->get(sys_id => $sys_id);
     
     # return a set of records as an array of hashes
-    my @recs = $table->getRecords(%parameters);
+    @recs = $table->getRecords(%parameters);
 
     # call getKeys and return a query object
-    my $qry = $table->query(%parameters);
+    $qry = $table->query(%parameters);
     
     # fetch the next chunk of records
-    my @recs = $qry->fetch($numrecs);
+    @recs = $qry->fetch($numrecs);
 
     # retrieve a record based on a unique key other than sys_id
-    my $rec = $table->getRecord($name => $value);
+    $rec = $table->getRecord($name => $value);
     
     # insert a record
-    $table->insert(%parameters);
+    $sys_id = $table->insert(%parameters);
+    
+    # insert multiple records
+    @results = $table->insert(@records);
     
     # update a record
     $table->update(%parameters);
@@ -136,23 +139,18 @@ Features of this module include:
 
 =item *
 
+Support for both Direct Web Services and Scripted Web Services.
+
+=item *
+
 Simplified API which closely mirrors ServiceNow's
-L<Direct Web Services API|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API>.
+L<Direct Web Services API|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API>
+documentation.
 
 =item *
 
-Efficient and easy to use methods for
-reading large tables
-which overcome ServiceNow's
-built-in limitation of 250 records
-per SOAP Web Services call,
-and adhere to ServiceNow's 
-L<best practice recommendations|http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>
-for querying data via Web Services.
-
-=item *
-
-Specialized functions such as L</attachFile> and L</getVariables>.
+Robust, easy to use methods for reading large amounts of data
+which adhere to ServiceNow's L<best practice recommendations|http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>.
 
 =back
 
@@ -203,8 +201,8 @@ sub ServiceNow {
 
 =head2 ServiceNow
 
-This method C<ServiceNow>
-(which is essentially an alias for ServiceNow::SOAP::Session->new()
+This C<ServiceNow> function
+(which is essentially an alias for C<ServiceNow::SOAP::Session-E<gt>new()>)
 is used to obtain a reference to a Session object. 
 The Session object essentially holds the URL and 
 connection credentials for your ServiceNow instance. 
@@ -231,7 +229,7 @@ The following two statements are equivalent.
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password);
     
 Tracing of Web Services calls can be enabled by passing in a fourth parameter.
-For details refer to L</DIAGNOSTICS> below.
+(See L</DIAGNOSTICS> below)
 
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password, 1);
 
@@ -260,35 +258,6 @@ sub new {
     $context = $session;
     print "url=$url; user=$user\n" if $trace;
     return $session;
-}
-
-=head2 connect
-
-Use of this method is optional, but sometimes you want to know up front
-whether your connection credentials are valid.
-This method tests them by attempting to get the user's profile
-from C<sys_user> using C<getRecords>, and trapping the error.
-If successful, the session object is returned.
-If unsuccessful, null is returned and the error message is in $@.
-
-B<Syntax>
-
-    my $sn = ServiceNow($instancename, $username, $password)->connect()
-        or die "Unable to connect to $instancename: $@";
-
-=cut
-
-sub connect {
-    my $self = shift;
-    my $username = $self->{user};
-    my $user_tbl = $self->table('sys_user');
-    my @recs;
-    eval { @recs = $user_tbl->getRecords(user_name => $username) };
-    return 0 if $@;
-    return 0 unless scalar(@recs) == 1;
-    my $rec = $recs[0];
-    return 0 unless $rec->{user_name} eq $username;
-    return $self;
 }
 
 sub setTrace {
@@ -371,9 +340,77 @@ sub call {
     }
 }
 
+=head2 connect
+
+Use of this method is optional, but sometimes you want to know up front
+whether your connection credentials are valid.
+This method tests them by attempting to get the user's profile
+from C<sys_user> using C<getRecords>, and trapping the error.
+If successful, the session object is returned.
+If unsuccessful, null is returned and the error message is in $@.
+
+B<Syntax>
+
+    my $sn = ServiceNow($instancename, $username, $password)->connect()
+        or die "Unable to connect to $instancename: $@";
+
+=cut
+
+sub connect {
+    my $self = shift;
+    my $username = $self->{user};
+    my $user_tbl = $self->table('sys_user');
+    my @recs;
+    eval { @recs = $user_tbl->getRecords(user_name => $username) };
+    return 0 if $@;
+    return 0 unless scalar(@recs) == 1;
+    my $rec = $recs[0];
+    return 0 unless $rec->{user_name} eq $username;
+    return $self;
+}
+
+=head2 loadSession
+
+This method loads the session information (i.e. cookies) from a file.
+This may be required if you are running the same perl script multiple times
+(each time in a separate process)
+and you do not want to establish a separate ServiceNow session
+each time the script is run.
+Use L</saveSession> to save the session identifier to a file
+and this method to load the session identifier from the file.
+
+B<Syntax>
+
+    $sn->loadSession($filename);
+    
+=cut
+    
+sub loadSession {
+    my ($self, $filename) = @_;
+    my $cookie_jar = $self->{cookie_jar};
+    $cookie_jar->load($filename);
+}
+
+=head2 saveSession
+
+This method saves the session information (i.e. cookies) to a file.  
+For usage notes refer to L</loadSession> above.
+
+B<Syntax>
+
+    $sn->saveSession($filename);
+    
+=cut
+
+sub saveSession {
+    my ($self, $filename) = @_;
+    my $cookie_jar = $self->{cookie_jar};
+    $cookie_jar->save($filename);
+}
+
 =head2 table
 
-Used to obtain a Table object.  
+Used to obtain a reference to a Table object.  
 The Table object is subsequently used for 
 L</ServiceNow::SOAP::Table> methods described below.
 
@@ -394,49 +431,6 @@ sub table {
     return $table;
 }
 
-=head2 saveSession
-
-Saves the session information to a file.  See L</loadSession>.
-
-B<Syntax>
-
-    $sn->saveSession($filename);
-    
-=cut
-
-sub saveSession {
-    my ($self, $filename) = @_;
-    my $cookie_jar = $self->{cookie_jar};
-    $cookie_jar->save($filename);
-}
-
-=head2 loadSession
-
-Loads the session information from a file.
-This may be required if you are running the same perl script over and over
-(each time in a separate process)
-and you do not want to establish a separate ServiceNow session
-each time the script is run.
-
-B<Syntax>
-
-    $sn->loadSession($filename);
-    
-=cut
-    
-sub loadSession {
-    my ($self, $filename) = @_;
-    my $cookie_jar = $self->{cookie_jar};
-    $cookie_jar->load($filename);
-}
-
-sub lookup {
-    my ($self, $table, $fieldname, $fieldvalue) = @_;
-    my $tab = $self->table($table);
-    my $rec = $tab->get($fieldname, $fieldvalue);
-    return $rec->{sys_id};
-}
-
 =head1 ServiceNow::SOAP::Table
 
 Table objects are used for ServiceNow's
@@ -446,6 +440,15 @@ and the corresponding SOAP::Lite object.
 
 To obtain a Table object,
 use the L</table> method describe above.
+
+These Table object methods provide an interface to the Direct Web Services API:
+L</deleteRecord>,
+L</get>,
+L</getKeys>,
+L</getRecords>,
+L</insert>,
+L</insertMultiple>,
+L</update>.
 
 =cut
 
@@ -525,7 +528,111 @@ sub traceAfter {
     $session->traceAfter($trace, $client, $message, $content);
 }
 
-=head2 columns
+==head2 asQuery
+
+This method creates a new L<Query|/ServiceNow::SOAP::Query> object
+from a list of keys.
+It does not make any Web Services calls.
+It simply makes a copy of the list.
+Each item in the list must be a B<sys_id> for the respective table.
+
+B<Syntax>
+
+    my $query = $table->asQuery(@keys);
+
+B<Example>
+
+In this example, we assume that C<@incRecs> contains an array of C<incident> records
+from a previous query.
+We need an array of C<sys_user_group> records
+for all referenced assignment groups.
+We use C<map> to extract a list of assignment group keys from the C<@incRecs>;
+C<grep> to discard the blanks; and C<uniq> to discard the duplicates.
+C<@grpKeys> contains the list of C<sys_user_group> keys.
+This array is then used to construct a new Query using L</asQuery>.
+L</fetchAll> is used to retrieve the records.
+
+    use List::MoreUtils qw(uniq);
+
+    my @grpKeys = uniq grep { !/^$/ } map { $_->{assignment_group} } @incRecs;
+    my @grpRecs = $sn->table("sys_user_group")->asQuery(@grpKeys)->fetchAll();
+        
+=cut
+
+sub asQuery {
+    my $self = shift;
+    my $query = ServiceNow::SOAP::Query->new($self);
+    my @keys = @_;
+    $query->{keys} = \@keys;
+    $query->{count} = scalar(@keys);
+    $query->{params} = {};
+    $query->{index} = 0;
+    return $query;
+}
+    
+=head2 attachFile
+
+If you are using Perl to create incident tickets,
+then you may have a requirement to attach files to those tickets.
+
+This method implements the
+L<attachment creator API|http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service>.
+The method requires C<soap_ecc> role.
+
+You will need to specify a MIME type.
+If no type is specified,
+this function will use a default type of "text/plain".
+For a list of MIME types, refer to
+L<http://en.wikipedia.org/wiki/Internet_media_type>.
+
+When you attach a file to a ServiceNow record,
+you can also specify an attachment name
+which is different from the actual file name.
+If no attachment name is specified,
+this function will
+assume that the attachment name is the same as the file name.
+
+This function will die if the file cannot be read.
+
+B<Syntax>
+
+    $table->attachFile($sys_id, $filename, $mime_type, $attachment_name);
+
+B<Example>
+
+    $incident->attachFile($sys_id, "screenshot.png", "image/png");
+    
+=cut
+
+sub attachFile {
+    my $self = shift;
+    my ($sysid, $filename, $mimetype, $attachname) = @_;
+    Carp::croak "attachFile: No such record" unless $self->get($sysid);
+    $mimetype = "text/plain" unless $mimetype;
+    $attachname = $filename unless $attachname;
+    Carp::croak "Unable to read file \"$filename\"" unless -r $filename;
+    my $session = $self->{session};
+    my $ecc_queue = $self->{ecc_queue} ||
+        ($self->{ecc_queue} = $session->table('ecc_queue'));
+    open my $fh, '<', $filename 
+        or die "Unable to open \"$filename\"\n$!";
+    my ($buf, $base64);
+    # encode in multiples of 57 bytes to ensure no padding in the middle
+    while (read $fh, $buf, 60*57) {
+        $base64 .= MIME::Base64::encode_base64($buf);
+    }
+    close $fh;
+    my $tablename = $self->{name};
+    my $sysid = $ecc_queue->insert(
+        topic => 'AttachmentCreator',
+        name => "$attachname:$mimetype",
+        source => "$tablename:$sysid",
+        payload => $base64
+    );
+    die "attachFile failed" unless $sysid;
+}
+
+head2 columns
 
 This method returns a list of the columns in a table.
 The list is retrieved from the WSDL.
@@ -581,9 +688,75 @@ sub count {
     return $count;
 }
 
+=head2 deleteRecord
+
+Deletes a record.
+For information on available parameters
+refer to the ServiceNow documentation on the 
+L<"deleteRecord" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord>.
+
+B<Syntax>
+
+    $table->deleteRecord(sys_id => $sys_id);
+    $table->deleteRecord($sys_id);
+
+=cut
+
+sub deleteRecord {
+    my $self = shift;
+    if (_isGUID($_[0])) { unshift @_, 'sys_id' };
+    my %values = @_;
+    my $sysid = $values{sys_id};
+    $self->traceBefore("delete $sysid");
+    my $som = $self->callMethod('delete', _params @_);
+    $self->traceAfter();
+    return $self;
+}
+
+=head2 except
+
+This method returns a list of all columns in the table
+B<except> those in the argument list.
+The argument(s) to this method can be either a string 
+containing a comma separated list of names
+or a list of names (i.e. C<qw>).
+This method returns a string containing a comma separated list of names.
+
+The [only useful] purpose of this function
+is to that you can pass the result back in as an
+C<__exclude_columns>
+L<extended query parameter|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters>.
+
+B<Syntax>
+
+    my $names = $table->except(@list_of_columns);
+    my $names = $table->except($comma_separated_list_of_columns);
+    
+B<Example>
+
+This example retrieves the columns sys_id, number and description
+from the incident table.
+In other words, 
+the result excludes all columns except sys_id, number and description.
+
+    my $incident = $sn->table("incident");
+    my @recs = $incident->getRecords(
+        __encoded_query => "sys_created_on>=$datetime,
+        __exclude_columns => 
+            $incident->except("sys_id,number,description"),
+        __limit => 250);
+ 
+=cut
+
+sub except {
+    my $self = shift;
+    my %names = map { $_ => 1 } split /,/, join(',', @_);
+    my @excl = grep { !$names{$_} } $self->columns();
+    return join(',', @excl);
+}
 =head2 get
 
-This method retrieves a single record.
+This method retrieves a single record based on sys_id.
 The result is returned as a reference to a hash.
 
 If no matching record is found then null is returned.
@@ -650,6 +823,52 @@ sub getKeys {
     return @keys;
 }
 
+=head2 getRecord
+
+This method returns a single qualifying records.  
+The method returns null if there are no qualifying records.
+The method will B<die> if there are multiple qualifying records.
+
+This method is typically used to retrieve a record
+based on number or name.
+
+B<Syntax>
+
+    $rec = $table->getRecord(%parameters);
+    $rec = $table->getRecord($encodedquery);
+    
+B<Example>
+
+This example retrieves a B<change_request> record based on B<number>.
+
+    my $chgRec = $sn->table("change_request")->getRecord(number => $number);
+    if ($chgRec) {
+        print "Short description = ", $chgRec->{short_description}, "\n";
+    }
+    else {
+        print "$number not found\n";
+    }
+
+The following two equivalent examples 
+illustrate the relationship between 
+L</getRecord> and L</getRecords>.
+
+    my @recs = $table->getRecords(%parameters);
+    die "Too many records" if scalar(@recs) > 1;
+    my $rec = $recs[0];
+
+    my $rec = $table->getRecord(%parameters);
+
+=cut
+
+sub getRecord {
+    my $self = shift;
+    my $tablename = $self->{name};
+    my @recs = $self->getRecords(@_);
+    Carp::croak("get $tablename: multiple records returned") if @recs > 1;
+    return $recs[0];
+}
+
 =head2 getRecords
 
 This method returns a list of records. Actually, it returns a list of hash references.
@@ -702,50 +921,10 @@ sub getRecords {
     return @records;
 }
 
-=head2 getRecord
-
-This method returns a single qualifying records.  
-The method returns null if there are no qualifying records.
-The method will B<die> if there are multiple qualifying records.
-
-B<Syntax>
-
-    $rec = $table->getRecord(%parameters);
-    $rec = $table->getRecord($encodedquery);
-    
-B<Example>
-
-    my $number = "CHG12345";
-    my $chgRec = $sn->table("change_request")->getRecord(number => $number);
-    if ($chgRec) {
-        print "Short description = ", $chgRec->{short_description}, "\n";
-    }
-    else {
-        print "$number not found\n";
-    }
-
-The following two examples are equivalent.
-
-    my $rec = $table->getRecord(%parameters);
-    
-    my @recs = $table->getRecords(%parameters);
-    die "Too many records" if scalar(@recs) > 1;
-    my $rec = $recs[0];
-    
-=cut
-
-sub getRecord {
-    my $self = shift;
-    my $tablename = $self->{name};
-    my @recs = $self->getRecords(@_);
-    Carp::croak("get $tablename: multiple records returned") if @recs > 1;
-    return $recs[0];
-}
-
 =head2 insert
 
 This method inserts a record.
-In a scalar context, this method returns a sys_id only.
+In a scalar context, this method returns a B<sys_id> only.
 In a list context, this method returns a list of name/value pairs.
 
 For information on available parameters
@@ -761,7 +940,7 @@ B<Examples>
 
     my $incident = $sn->table("incident");
 
-In a scalar context, the function returns a sys_id.
+In a scalar context, the function returns a B<sys_id>.
 
     my $sys_id = $incident->insert(
         short_description => $short_description,
@@ -903,31 +1082,6 @@ sub update {
     return $self;
 }
 
-=head2 deleteRecord
-
-Deletes a record.
-For information on available parameters
-refer to the ServiceNow documentation on the 
-L<"deleteRecord" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord>.
-
-B<Syntax>
-
-    $table->deleteRecord(sys_id => $sys_id);
-    $table->deleteRecord($sys_id);
-
-=cut
-
-sub deleteRecord {
-    my $self = shift;
-    if (_isGUID($_[0])) { unshift @_, 'sys_id' };
-    my %values = @_;
-    my $sysid = $values{sys_id};
-    $self->traceBefore("delete $sysid");
-    my $som = $self->callMethod('delete', _params @_);
-    $self->traceAfter();
-    return $self;
-}
-
 =head2 query
 
 This method creates a new L<Query|/ServiceNow::SOAP::Query> object
@@ -948,7 +1102,7 @@ until all records have been retrieved.
     my $filter = "sys_created_on>=2014-01-01^sys_created_on<2014-02-01";
     my $qry = $sn->table("incident")->query(
         __encoded_query => $filter,
-        __order_by => "sys_created_on);
+        __order_by => "sys_created_on");
     my @recs = $qry->fetchAll();
 
 =cut
@@ -968,110 +1122,6 @@ sub query {
     $query->{params} = \%params;
     $query->{index} = 0;
     return $query;
-}
-
-=head2 asQuery
-
-This method creates a new L<Query|/ServiceNow::SOAP::Query> object
-from a list of keys.
-It does not make any Web Services calls.
-It simply makes a copy of the list.
-Each item in the list must be a sys_id for the respective table.
-
-B<Syntax>
-
-    my $query = $table->asQuery(@keys);
-
-B<Example>
-
-In this example, we assume that C<@incRecs> contains an array of C<incident> records
-from a previous query.
-We need an array of C<sys_user_group> records
-for all referenced assignment groups.
-We use C<map> to extract a list of assignment group keys from the C<@incRecs>;
-C<grep> to discard the blanks; and C<uniq> to discard the duplicates.
-C<@grpKeys> contains the list of C<sys_user_group> keys.
-This array is then used to construct a new Query using L</asQuery>.
-L</fetchAll> is used to retrieve the records.
-
-    use List::MoreUtils qw(uniq);
-
-    my @grpKeys = uniq grep { !/^$/ } map { $_->{assignment_group} } @incRecs;
-    my @grpRecs = $sn->table("sys_user_group")->asQuery(@grpKeys)->fetchAll();
-        
-=cut
-
-sub asQuery {
-    my $self = shift;
-    my $query = ServiceNow::SOAP::Query->new($self);
-    my @keys = @_;
-    $query->{keys} = \@keys;
-    $query->{count} = scalar(@keys);
-    $query->{params} = {};
-    $query->{index} = 0;
-    return $query;
-}
-    
-=head2 attachFile
-
-If you are using Perl to create incident tickets,
-then you may have a requirement to attach files to those tickets.
-
-This method implements the
-L<attachment creator API|http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service>.
-The method requires C<soap_ecc> role.
-
-You will need to specify a MIME type.
-If no type is specified,
-this function will use a default type of "text/plain" 
-For a list of MIME types, refer to 
-L<http://en.wikipedia.org/wiki/Internet_media_type>.
-
-When you attach a file to a ServiceNow record,
-you can also specify an attachment name
-which is different from the actual file name.
-If no attachment name is specified,
-this function will
-assume that the attachment name is the same as the file name.
-
-This function will die if the file cannot be read.
-
-B<Syntax>
-
-    $table->attachFile($sys_id, $filename, $mime_type, $attachment_name);
-
-B<Example>
-
-    $incident->attachFile($sys_id, "screenshot.png", "image/png");
-    
-=cut
-
-sub attachFile {
-    my $self = shift;
-    my ($sysid, $filename, $mimetype, $attachname) = @_;
-    Carp::croak "attachFile: No such record" unless $self->get($sysid);
-    $mimetype = "text/plain" unless $mimetype;
-    $attachname = $filename unless $attachname;
-    Carp::croak "Unable to read file \"$filename\"" unless -r $filename;
-    my $session = $self->{session};
-    my $ecc_queue = $self->{ecc_queue} ||
-        ($self->{ecc_queue} = $session->table('ecc_queue'));
-    open my $fh, '<', $filename 
-        or die "Unable to open \"$filename\"\n$!";
-    my ($buf, $base64);
-    # encode in multiples of 57 bytes to ensure no padding in the middle
-    while (read $fh, $buf, 60*57) {
-        $base64 .= MIME::Base64::encode_base64($buf);
-    }
-    close $fh;
-    my $tablename = $self->{name};
-    my $sysid = $ecc_queue->insert(
-        topic => 'AttachmentCreator',
-        name => "$attachname:$mimetype",
-        source => "$tablename:$sysid",
-        payload => $base64
-    );
-    die "attachFile failed" unless $sysid;
 }
 
 =head2 getVariables
@@ -1167,7 +1217,7 @@ for this table will be affected.
 This method returns the modified Table object.
 
 For additional information regarding display values refer to the ServiceNow documentation on
-L<"Return Display Value for Reference Variables"|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables>
+L<"Return Display Value for Reference Variables"|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables>.
 
 B<Syntax>
 
@@ -1211,7 +1261,7 @@ Set the value of the SOAP Web Services client HTTP timeout.
 In addition, you may need to increase the ServiceNow system property
 C<glide.soap.request_processing_timeout>.
     
-B<syntax>
+B<Syntax>
 
     $table->setTimeout($seconds);
     
@@ -1255,35 +1305,6 @@ sub getFields {
     return %result;
 }
 
-=head2 except
-
-This method accepts as argument either a list of column names
-or a string containing a comma separated list of column names.
-It returns a comma separated list of the 
-column names which are B<NOT> in the argument list.
-
-B<Syntax>
-
-    my $names = $table->except(@list_of_columns);
-    my $names = $table->except($comma_separated_list_of_columns);
-    
-B<Example>
-
-    my $incident = $sn->table("incident");
-    my @recs = $incident->getRecords(
-        __encoded_query => "sys_created_on>=$datetime,
-        __exclude_columns => 
-            $incident->except("sys_id,number,description"),
-        __limit => 250);
- 
-=cut
-
-sub except {
-    my $self = shift;
-    my %names = map { $_ => 1 } split /,/, join(',', @_);
-    my @excl = grep { !$names{$_} } $self->columns();
-    return join(',', @excl);
-}
     
 package ServiceNow::SOAP::Query;
 
@@ -1362,17 +1383,23 @@ sub new {
 
 =head2 exclude
 
-This method limits the list of columns that will be returned
-for any subsequent calls to L</fetch>.
+This method will affect any subsequent calls to L</fetch>.
+Any columns not specified in the argument(s)
+will be excluded from the returned result.
+By excluding unneeded columns from the query result, 
+it is possible to significantly improve the performance of large queries.
+For a simpler way to achieve this objective, refer to the L</include> method below.
 
 You may pass this method either a list of column names, 
 or a string containing a comma delimited list of names.
 It will override any prior calls to L</exclude> or L</include>.
 It returns a reference to the modified Query object.
 
-By excluding unneeded columns from the query result, 
-it is possible to significantly reduce the time required for large queries.
+B<Syntax>
 
+    $query->exclude(@list_of_columns);
+    $query->exclude($comma_delimited_list_of_columns);
+    
 =cut
 
 sub exclude {
@@ -1380,50 +1407,6 @@ sub exclude {
     my $table = $self->{table};
     my $excl = join(',', @_);
     $self->{params}{__exclude_columns} = $excl;
-    return $self;
-}
-
-=head2 include
-
-This method limits the list of columns that will be returned
-for any subsequent calls to L</fetch>.
-
-You may pass this method either a list of column names,
-or a string containing a comma delimited list of names.
-It will override any prior calls to L</exclude> or L</include>.
-It returns a reference to the modified Query object.
-
-By limiting the results to the needed columns, 
-it is possible to significantly reduce the time required for large queries.
-
-For some reason the Direct Web Services API allows you to specify a 
-list of columns to be excluded from the query result,
-but there is no similar capability to specify a list of columns to be included.
-This function implements the more obviously needed behavior by inverting the list.
-It uses the WSDL to generate a list of columns returned by L</getRecords>,
-and subtracts the specified names to create an C<"__exclude_columns">
-extended query parameter.
-
-B<Syntax>
-
-    $query->include(@list_of_columns);
-    $query->include($comma_delimited_list_of_columns);
-    
-B<Example>
-
-    my $tbl = $sn->table("cmdb_ci_computer");
-    my $qry = $tbl->query()->include(qw(
-        sys_id name sys_class_name 
-        operational_status sys_updated_on));
-    my @recs = $qry->fetchAll();    
-
-=cut
-
-sub include {
-    my $self = shift;
-    my $table = $self->{table};
-    my $excl = $table->except(split /,/, join(',', @_));
-    $self->exclude($excl);
     return $self;
 }
 
@@ -1511,34 +1494,6 @@ sub fetchAll {
     return @result; 
 }
 
-=head2 setChunk
-
-This method sets the default chunk size
-(number of records per fetch)
-for subsequent calls to L</fetch> or L</fetchAll>.
-
-If B<setChunk> is not specified then 
-the default is 250 records per fetch.
-
-=cut
-
-sub setChunk {
-    my $self = shift;
-    $self->{chunk} = shift || $DEFAULT_CHUNK;
-    return $self;
-}
-
-sub getChunk {
-    my $self = shift;
-    return $self->{chunk};
-}
-
-sub setIndex {
-    my $self = shift;
-    $self->{index} = shift;
-    return $self;
-}
-
 =head2 getCount 
 
 This method returns the total number of keys in the Query.
@@ -1556,7 +1511,7 @@ This method returns a list of the keys included in the Query.
 
 B<Example>
 
-The following example calls </getKeys> to create a new query,
+The following example calls L</getKeys> to create a new query,
 and then makes of copy of the query using the same list of keys.
 
     my $query1 = $table->query($encoded_query);
@@ -1567,6 +1522,89 @@ and then makes of copy of the query using the same list of keys.
 sub getKeys {
     my $self = shift;
     return @{$self->{keys}};
+}
+
+=head2 include
+
+This method will affect any subsequent calls to L</fetch>
+by limiting which columns are returned.
+By including only the needed columns in the query result,
+it is possible to significantly improve the performance of large queries.
+
+You may pass this method either a list of column names,
+or a string containing a comma delimited list of names.
+It will override any prior calls to L</exclude> or L</include>.
+It returns a reference to the modified Query object.
+
+For some reason the Direct Web Services API allows you to specify a 
+list of columns to be excluded from the query result,
+but there is no similar out-of-box capability to specify only the columns to be included.
+This function implements the more obviously needed behavior by inverting the list.
+It uses the WSDL to generate a list of columns returned by L</getRecords>,
+and subtracts the specified names to create an C<"__exclude_columns">
+extended query parameter.
+
+B<Syntax>
+
+    $query->include(@list_of_columns);
+    $query->include($comma_delimited_list_of_columns);
+    
+B<Example>
+
+This example returns a list of all records in the B<cmdb_ci_computer> table,
+but only 5 columns are returnd.
+
+    my $tbl = $sn->table("cmdb_ci_computer");
+    my $qry = $tbl->query()->include(
+        qw(sys_id name sys_class_name operational_status sys_updated_on));
+    my @recs = $qry->fetchAll();    
+
+=cut
+
+sub include {
+    my $self = shift;
+    my $table = $self->{table};
+    my $excl = $table->except(split /,/, join(',', @_));
+    $self->exclude($excl);
+    return $self;
+}
+
+=head2 setChunk
+
+This method sets the default chunk size
+(number of records per fetch)
+for subsequent calls to L</fetch> or L</fetchAll>.
+It returns a reference to the modified Query object.
+
+If B<setChunk> is not specified then 
+the default is 250 records per fetch.
+
+B<Syntax>
+
+    $query->setChunk($numrecs);
+
+B<Example>
+
+    my $rel_tbl = $sn->table("cmdb_rel_ci");
+    my @rel_data = $rel_tbl->query()->setChunk(1000)->fetchAll();
+ 
+=cut
+
+sub setChunk {
+    my $self = shift;
+    $self->{chunk} = shift || $DEFAULT_CHUNK;
+    return $self;
+}
+
+sub getChunk {
+    my $self = shift;
+    return $self->{chunk};
+}
+
+sub setIndex {
+    my $self = shift;
+    $self->{index} = shift;
+    return $self;
 }
 
 1;
