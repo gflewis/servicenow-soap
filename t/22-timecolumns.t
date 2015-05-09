@@ -13,7 +13,7 @@ my $sn = TestUtil::getSession();
 my $computer = $sn->table('cmdb_ci_computer');
 my $query1 = $computer->query(operational => 1, sys_class_name => 'cmdb_ci_computer')->setChunk(500);
 my $count = $query1->getCount();
-my $query2 = $computer->asQuery($query1->getKeys())->setColumns(
+my $query2 = $computer->asQuery($query1->getKeys())->include(
     "sys_id,name,sys_created_on,sys_updated_on")->setChunk(500);
 ok ($query2->getCount() == $count, "$count records in query");
 

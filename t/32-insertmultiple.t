@@ -8,11 +8,11 @@ use TestUtil;
 # SOAP::Lite->import(+trace => 'debug');
 
 if (TestUtil::config) {
-    if (getProp('test_insert')) {
+    if (getProp('test_insert_multiple')) {
         plan tests => 3;
     }
     else {
-        plan skip_all => "test_insert is false";
+        plan skip_all => "test_insert_multiple is false";
     }
 }
 else {

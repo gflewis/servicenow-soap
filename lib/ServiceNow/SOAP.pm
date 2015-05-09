@@ -987,6 +987,9 @@ This method inserts multiple records.
 The input is an array of hash references.
 It returns an array of hash references.
 
+This method requires installation of the 
+L<ServiceNow Insert Multiple Web Services Plugin|http://wiki.servicenow.com/index.php?title=Web_Service_Import_Sets#Inserting_Multiple_Records>.
+
 For additional information 
 refer to the ServiceNow documentation on the 
 L<"insertMultiple" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#insertMultiple>.
