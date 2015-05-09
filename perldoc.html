@@ -206,8 +206,6 @@
 
 <h2 id="ServiceNow">ServiceNow</h2>
 
-<p><b>Description</b></p>
-
 <p>This method <code>ServiceNow</code> (which is essentially an alias for ServiceNow::SOAP::Session-&gt;new() is used to obtain a reference to a Session object. The Session object essentially holds the URL and connection credentials for your ServiceNow instance.</p>
 
 <p>The first argument is the URL or instance name. The second argument is the user name. The third argument is the password.</p>
@@ -277,8 +275,6 @@
 
 <h2 id="saveSession">saveSession</h2>
 
-<p><b>Description</b></p>
-
 <p>Saves the session information to a file. See <a href="#loadSession">&quot;loadSession&quot;</a>.</p>
 
 <p><b>Syntax</b></p>
@@ -287,8 +283,6 @@
     </code></pre>
 
 <h2 id="loadSession">loadSession</h2>
-
-<p><b>Description</b></p>
 
 <p>Loads the session information from a file. This may be required if you are running the same perl script over and over (each time in a separate process) and you do not want to establish a separate ServiceNow session each time the script is run.</p>
 
@@ -313,8 +307,6 @@
     </code></pre>
 
 <h2 id="count">count</h2>
-
-<p><b>Description</b></p>
 
 <p>This method counts the number of records in a table, or the number of records that match a set of parameters.</p>
 
@@ -537,8 +529,6 @@
 
 <h2 id="deleteRecord">deleteRecord</h2>
 
-<p><b>Description</b></p>
-
 <p>Deletes a record. For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord">&quot;deleteRecord&quot; Direct SOAP API method</a>.</p>
 
 <p><b>Syntax</b></p>
@@ -586,8 +576,6 @@
 
 <h2 id="attachFile">attachFile</h2>
 
-<p><b>Description</b></p>
-
 <p>If you are using Perl to create incident tickets, then you may have a requirement to attach files to those tickets.</p>
 
 <p>This method implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The method requires <code>soap_ecc</code> role.</p>
@@ -608,8 +596,6 @@
     </code></pre>
 
 <h2 id="getVariables">getVariables</h2>
-
-<p><b>Description</b></p>
 
 <p>This method returns a list of hashes of the variables attached to a Requested Item (RITM).</p>
 
@@ -653,8 +639,6 @@
 
 <h2 id="setDV">setDV</h2>
 
-<p><b>Description</b></p>
-
 <p>Used to enable (or disable) display values in queries. All subsequent calls to <a href="#get">&quot;get&quot;</a>, <a href="#getRecords">&quot;getRecords&quot;</a> or <a href="#getRecord">&quot;getRecord&quot;</a> for this table will be affected. This method returns the modified Table object.</p>
 
 <p>For additional information regarding display values refer to the ServiceNow documentation on <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables">&quot;Return Display Value for Reference Variables&quot;</a></p>
@@ -677,8 +661,6 @@
     </code></pre>
 
 <h2 id="setTimeout">setTimeout</h2>
-
-<p><b>Description</b></p>
 
 <p>Set the value of the SOAP Web Services client HTTP timeout. In addition, you may need to increase the ServiceNow system property <code>glide.soap.request_processing_timeout</code>.</p>
 
