@@ -203,8 +203,6 @@ sub ServiceNow {
 
 =head2 ServiceNow
 
-B<Description>
-
 This method C<ServiceNow>
 (which is essentially an alias for ServiceNow::SOAP::Session->new()
 is used to obtain a reference to a Session object. 
@@ -398,8 +396,6 @@ sub table {
 
 =head2 saveSession
 
-B<Description>
-
 Saves the session information to a file.  See L</loadSession>.
 
 B<Syntax>
@@ -415,8 +411,6 @@ sub saveSession {
 }
 
 =head2 loadSession
-
-B<Description>
 
 Loads the session information from a file.
 This may be required if you are running the same perl script over and over
@@ -552,8 +546,6 @@ sub columns {
 }
 
 =head2 count
-
-B<Description>
 
 This method counts the number of records in a table, 
 or the number of records that match a set of parameters.
@@ -913,8 +905,6 @@ sub update {
 
 =head2 deleteRecord
 
-B<Description>
-
 Deletes a record.
 For information on available parameters
 refer to the ServiceNow documentation on the 
@@ -1024,8 +1014,6 @@ sub asQuery {
     
 =head2 attachFile
 
-B<Description>
-
 If you are using Perl to create incident tickets,
 then you may have a requirement to attach files to those tickets.
 
@@ -1087,8 +1075,6 @@ sub attachFile {
 }
 
 =head2 getVariables
-
-B<Description>
 
 This method returns a list of hashes 
 of the variables attached to a Requested Item (RITM).
@@ -1175,8 +1161,6 @@ sub getVariables {
 
 =head2 setDV
 
-B<Description>
-
 Used to enable (or disable) display values in queries.
 All subsequent calls to L</get>, L</getRecords> or L</getRecord> 
 for this table will be affected.
@@ -1222,8 +1206,6 @@ sub setChunk {
 }
 
 =head2 setTimeout
-
-B<Description>
 
 Set the value of the SOAP Web Services client HTTP timeout.
 In addition, you may need to increase the ServiceNow system property
