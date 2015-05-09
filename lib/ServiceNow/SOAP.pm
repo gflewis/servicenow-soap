@@ -528,7 +528,7 @@ sub traceAfter {
     $session->traceAfter($trace, $client, $message, $content);
 }
 
-==head2 asQuery
+=head2 asQuery
 
 This method creates a new L<Query|/ServiceNow::SOAP::Query> object
 from a list of keys.
@@ -632,7 +632,7 @@ sub attachFile {
     die "attachFile failed" unless $sysid;
 }
 
-head2 columns
+=head2 columns
 
 This method returns a list of the columns in a table.
 The list is retrieved from the WSDL.
