@@ -1,10 +1,11 @@
+use 5.010001;
 use Module::Build;
 use strict;
 
 my $builder = Module::Build->new(
     module_name => 'ServiceNow::SOAP',
     license => 'artistic_2',
-    dist_version => '0.002_000',
+#    dist_version => '0.01_01',
     requires => {
         'SOAP::Lite' => 0,
         'LWP::UserAgent' => 0,
