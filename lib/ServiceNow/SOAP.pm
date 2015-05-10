@@ -983,7 +983,6 @@ sub insert {
 =head2 insertMultiple
 
 This method inserts multiple records.
-
 The input is an array of hash references.
 It returns an array of hash references.
 
@@ -1093,13 +1092,13 @@ by calling L</getKeys>.
 B<Syntax>
 
     my $query = $table->query(%parameters);
-    my $query = $table->query($encodedquery};
+    my $query = $table->query($encodedquery);
     
 B<Example>
 
 The following example builds a list of all Incidents 
 created between 1/1/2014 and 2/1/2014 sorted by creation date/time.
-The C<fetchAll> method fetches chunks of records 
+The L</fetchAll> method fetches chunks of records 
 until all records have been retrieved.
 
     my $filter = "sys_created_on>=2014-01-01^sys_created_on<2014-02-01";
@@ -1554,7 +1553,7 @@ B<Syntax>
     
 B<Example>
 
-This example returns a list of all records in the B<cmdb_ci_computer> table,
+This example returns a list of all records in the C<cmdb_ci_computer> table,
 but only 5 columns are returnd.
 
     my $tbl = $sn->table("cmdb_ci_computer");
@@ -1579,7 +1578,7 @@ This method sets the default chunk size
 for subsequent calls to L</fetch> or L</fetchAll>.
 It returns a reference to the modified Query object.
 
-If B<setChunk> is not specified then 
+If C<setChunk> is not specified then 
 the default is 250 records per fetch.
 
 B<Syntax>
@@ -1614,21 +1613,23 @@ sub setIndex {
 
 =head1 DIAGNOSTICS
 
-The fourth (optional) argument to the L</ServiceNow> function is an integer trace level
-which can be helpful for debugging.
+The fourth (optional) argument to the L</ServiceNow> function 
+is an integer trace level which can be helpful for debugging.
 Sometimes, when you are developing a new script,
-it seems to hang at a certain point, and you just want to know what it is doing.
-Set the trace level to 1 to enable tracing messages for SOAP calls.
-Set the trace level to 2 to dump the complete XML of all SOAP results.
+it seems to hang at a certain point, 
+and you just want to know what it is doing.
+Set the trace level to 1 to print a single line for each Web Services call.
+Set the trace level to 2 to print the complete XML result for each call.
 Set the trace level to 0 (default) to disable this feature.
 
-You can also enable or disable tracing for a table by calling C<setTrace> on the object.
+You can also enable or disable tracing for a table by 
+calling C<setTrace> on the object.
 
     $table->setTrace(2);
     
 If you want even more, then add the following to your code.
 This will cause SOAP:Lite to dump the HTTP headers
-and contens for all messages, both sent and received.
+and contents for all messages, both sent and received.
 
     SOAP::Lite->import(+trace => 'debug');
 
