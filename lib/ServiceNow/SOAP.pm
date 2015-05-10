@@ -742,7 +742,7 @@ the result excludes all columns except sys_id, number and description.
 
     my $incident = $sn->table("incident");
     my @recs = $incident->getRecords(
-        __encoded_query => "sys_created_on>=$datetime,
+        __encoded_query => "sys_created_on>=$datetime",
         __exclude_columns => 
             $incident->except("sys_id,number,description"),
         __limit => 250);
