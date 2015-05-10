@@ -13,11 +13,10 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.01_01';
+our $VERSION = '0.01';
 
 our $DEFAULT_CHUNK = 250;
 our $DEFAULT_DV = 0;
-our $startTime;
 
 =head1 NAME
 
@@ -265,6 +264,8 @@ sub setTrace {
     $self->{trace} = $trace;
     return $self;
 }
+
+our $startTime;
 
 sub traceBefore {
     my ($self, $trace, $methodname) = @_;
