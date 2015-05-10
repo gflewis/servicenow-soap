@@ -13,7 +13,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.02';
+our $VERSION = '0.02_01';
 
 our $DEFAULT_CHUNK = 250;
 our $DEFAULT_DV = 0;
@@ -113,7 +113,7 @@ Insert a record.
 
 Retrieve a single record based on sys_id.
 
-    my $rec = $incident_tbl->get(sys_id => $sys_id);
+    my $rec = $incident_tbl->get($sys_id);
     print "number=", $rec->{number}, "\n";
 
 Retrieve a single record based on number.
@@ -123,8 +123,7 @@ Retrieve a single record based on number.
     
 Update a record.
 
-    $incident_tbl->update(
-        sys_id => $sys_id,
+    $incident_tbl->update($sys_id,
         assigned_to => "Fred Luddy",
         incident_state => 2);
     
