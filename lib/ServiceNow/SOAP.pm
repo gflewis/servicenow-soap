@@ -20,7 +20,7 @@ our $DEFAULT_DV = 0;
 
 =head1 NAME
 
-ServiceNow::SOAP - A better perl API for ServiceNow
+ServiceNow::SOAP - A better Perl API for ServiceNow
 
 =head1 SYNOPSIS
 
