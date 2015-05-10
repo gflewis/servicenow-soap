@@ -10,7 +10,11 @@ our @EXPORT = qw(config getProp isGUID getTimestamp today);
 our $config;
 
 sub config {
-    foreach my $configfile ('test.config', 't/test.config') {
+    foreach my $configfile (
+            '.test.config', 
+            't/.test.config',
+            'test.config', 
+            't/test.config') {
         next unless -f $configfile;
         do $configfile;
         return $config;
