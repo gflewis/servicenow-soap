@@ -13,7 +13,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.02_01';
+our $VERSION = '0.03';
 
 our $DEFAULT_CHUNK = 250;
 our $DEFAULT_DV = 0;
