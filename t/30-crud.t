@@ -10,7 +10,7 @@ use TestUtil;
 
 if (TestUtil::config) {
     if (getProp('test_insert')) {
-        plan tests => 10;
+        plan tests => 9;
     }
     else {
         plan skip_all => "test_insert is false";
@@ -20,8 +20,9 @@ else {
     plan skip_all => "no config";
 }
 
-my $timestamp = TestUtil::getTimestamp();
-my $lorem = TestUtil::lorem();
+my $timestamp = TestUtil::getTimestamp;
+my $lorem = TestUtil::lorem;
+my $today = TestUtil::today;
 
 my $groupName = getProp('group_name');
 ok ($groupName, "assignment group is $groupName");
@@ -52,12 +53,15 @@ ok ($rec1->{impact} == 3, "original impact is 3");
 # 
 # Attach a file
 #
-my $attachment = getProp('attachment');
-my $mimetype = getProp('attachment_type');
-
-ok ($attachment, "attachment name is $attachment");
-ok ($mimetype, "attachment type is $mimetype");
-$incident->attachFile($sysid, $attachment, $mimetype);
+SKIP_FILE: {
+    my $attachment = getProp('attachment');
+    my $mimetype = getProp('attachment_type');
+    skip "file attachment test skipped", 1 unless $attachment;
+    
+    print "attachment name is $attachment\n";
+    ok ($mimetype, "attachment type is $mimetype");
+    $incident->attachFile($sysid, $attachment, $mimetype);
+}
 #
 # Update the incident
 #
@@ -68,13 +72,12 @@ ok ($rec2->{impact} == 1, "updated impact is 1");
 #
 # Date filter test (look for records created today)
 #
-my $today = TestUtil::today;
 my $filter = "sys_created_on>=$today";
 print "filter=$filter\n";
 
 my @recs = $incident->getRecords($filter);
 
-ok (@recs > 1, "Records retrieved");
+ok (@recs > 1, scalar(@recs) . " records created today ($today) retrieved");
 my $dcount = 0;
 foreach my $rec (@recs) {
     my $number = $rec->{number};
@@ -87,7 +90,7 @@ ok ($dcount eq @recs, "$dcount created today");
 # 
 # Delete the incident
 #
-SKIP: {
+SKIP_DEL: {
     skip "deleteRecord test skipped", 1 unless getProp('test_delete');
     $incident->deleteRecord(sys_id => $sysid);
     my $rec3 = $incident->get($sysid);

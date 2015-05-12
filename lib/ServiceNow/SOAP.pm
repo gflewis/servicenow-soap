@@ -13,10 +13,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.03';
-
-our $DEFAULT_CHUNK = 250;
-our $DEFAULT_DV = 0;
+our $VERSION = '0.10';
 
 =head1 NAME
 
@@ -202,22 +199,18 @@ sub ServiceNow {
 This C<ServiceNow> function
 (which is essentially an alias for C<ServiceNow::SOAP::Session-E<gt>new()>)
 is used to obtain a reference to a Session object. 
-The Session object essentially holds the URL and 
-connection credentials for your ServiceNow instance. 
+The Session object essentially holds the URL and
+connection credentials for your ServiceNow instance,
+and the SOAP::Lite object.
 
-The first argument is the URL or instance name.
-The second argument is the user name.
-The third argument is the password. 
-
-The fourth (optional) argument is an integer trace level
-which can be helpful for debugging. For details refer to 
-L</DIAGNOSTICS> below.
+The first argument to this function is the instance,
+which can be either a fully qualified URL
+(I<e.g.> C<"https://mycompanydev.service-now.com">)
+or an instance name (I<e.g.> C<"mycompanydev">).
 
 B<Syntax>
 
-    my $sn = ServiceNow($instancename, $username, $password);
-    my $sn = ServiceNow($instanceurl, $username, $password);
-    my $sn = ServiceNow($instancename, $username, $password, $tracelevel);
+    my $sn = ServiceNow($instance, $username, $password, %options);
     
 B<Examples>
 
@@ -225,12 +218,12 @@ The following two statements are equivalent.
 
     my $sn = ServiceNow("https://mycompanydev.service-now.com", "soap.perl", $password);
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password);
-    
-Tracing of Web Services calls can be enabled by passing in a fourth parameter.
-(See L</DIAGNOSTICS> below)
 
-    my $sn = ServiceNow("mycompanydev", "soap.perl", $password, 1);
+Various options can be specified as name/value pairs following the password.
 
+    my $sn = ServiceNow("mycompanydev", $username, $password,
+        dv => "all", zip => 1, trace => 1);
+        
 =head1 ServiceNow::SOAP::Session
 
 =cut
@@ -238,22 +231,40 @@ Tracing of Web Services calls can be enabled by passing in a fourth parameter.
 package ServiceNow::SOAP::Session;
 
 sub new {
-    my ($pkg, $url, $user, $pass, $trace) = @_;
+    my ($pkg, $url, $user, $pass, @options) = @_;
+    my %opt = @options;
+    my $trace = $opt{trace} || 0;
+    my $zip = $opt{zip} || 0;
     # strip off any trailing slash
     $url =~ s/\/$//; 
     # append '.service-now.com' unless the URL contains a '.'
     $url = $url . '.service-now.com' unless $url =~ /\./;
     # prefix with 'https://' unless the URL already starts with https:
     $url = 'https://' . $url unless $url =~ /^http[s]?:/;
+    my $endpoint = "$url/sys_user.do?SOAP";
+    my $cookiejar = HTTP::Cookies->new(ignore_discard => 1);
+    my @params = (cookie_jar => $cookiejar);
+    push @params, compress_threshold => $zip if $zip;
+    print join(",", @params), "\n";
+    my $client = SOAP::Lite->proxy($endpoint, @params);
     my $session = {
         url => $url,
-        cookie_jar => HTTP::Cookies->new(ignore_discard => 1),
         user => $user, 
         pass => $pass,
-        trace => $trace || 0,
+        trace => $opt{trace} || 0,
+        dv => $opt{dv} || 0,
+        fetch => $opt{fetch} || 250,
+        query => $opt{query} || 10000,
+        trace => $trace,
+        zip => $zip,
+        client => $client
     };
     bless $session, $pkg;
     $context = $session;
+    # This endpoint is a stub.  Endpoint will be changed before each call.
+    my $timeout = $opt{timeout} || 0;
+    $client->transport->timeout($timeout) if $timeout;
+    
     print "url=$url; user=$user\n" if $trace;
     return $session;
 }
@@ -276,15 +287,15 @@ sub traceBefore {
 }
 
 sub traceAfter {
-    my ($self, $trace, $client, $message, $content) = @_;
+    my ($self, $trace, $message, $content) = @_;
     return unless $trace;
     my $finishTime = Time::HiRes::time();
     my $elapsed = $finishTime - $startTime;
     print sprintf(" %.2fs ", $elapsed), $message, "\n";
     if ($trace > 1) {
-        print defined $content ? $content : 
-            $client->transport()->http_response()->content(),
-            "\n";
+        $content = $self->{client}->transport()->http_response()->content()
+            unless defined $content;
+        print $content, "\n";
     }
 }
 
@@ -320,17 +331,16 @@ sub call {
     my $trace = $self->{trace};
     my $baseurl = $self->{url};
     my $endpoint = "$baseurl/$function.do?SOAP";
-    my $cookie_jar = $self->{cookie_jar};
-    my $client = SOAP::Lite->proxy($endpoint, cookie_jar => $cookie_jar);
+    my $client = $self->{client};
     my @params = 
         (@_ && ref $_[0] eq 'HASH') ?
         ServiceNow::SOAP::_params(%{$_[0]}) :
         ServiceNow::SOAP::_params(@_);
     $self->traceBefore($trace, $function);
     $context = $self;
-    my $som = $client->call('execute' => @params);
+    my $som = $client->endpoint($endpoint)->call('execute' => @params);
     Carp::croak $som->faultdetail if $som->fault;
-    $self->traceAfter($trace, $client);
+    $self->traceAfter($trace);
     my $response = $som->body->{executeResponse};
     if (ref $response eq 'HASH') {
         return wantarray ? %{$response} : $response;
@@ -408,6 +418,17 @@ sub saveSession {
     $cookie_jar->save($filename);
 }
 
+=head2 soap
+
+This method returns a reference to the underlying SOAP::Lite object.
+
+=cut
+
+sub soap {
+    my $self = shift;
+    return $self->{client};
+}
+
 =head2 table
 
 Used to obtain a reference to a Table object.  
@@ -416,7 +437,7 @@ L</ServiceNow::SOAP::Table> methods described below.
 
 B<Syntax>
 
-    my $table = $sn->table($tablename);
+    $table = $sn->table($tablename);
 
 B<Example>
 
@@ -475,16 +496,12 @@ sub new {
     my ($pkg, $session, $name) = @_;
     $context = $session;
     my $baseurl = $session->{url}; 
-    my $cookie_jar = $session->{cookie_jar};
     my $endpoint = "$baseurl/$name.do?SOAP";
-    my $client = SOAP::Lite->proxy($endpoint, cookie_jar => $cookie_jar);
     my $new = bless {
         session => $session,
         name => $name,
         endpoint => $endpoint,
-        client => $client,
-        dv => $DEFAULT_DV,
-        chunk => $DEFAULT_CHUNK,
+        dv => $session->{dv},
         trace => $session->{trace}
     }, $pkg;
     return $new;
@@ -493,9 +510,10 @@ sub new {
 sub callMethod {
     my $self = shift;
     my $methodname = shift;
-    my $trace = $self->{trace};
-    my $baseurl = $self->{session}->{url};
     my $tablename = $self->{name};
+    my $session = $self->{session};
+    my $client = $session->{client};
+    my $baseurl = $session->{url};
     my $endpoint = "$baseurl/$tablename.do?SOAP";
     if (($methodname eq 'get' || $methodname eq 'getRecords') && $self->{dv}) {
         my $dv = $self->{dv};
@@ -503,7 +521,6 @@ sub callMethod {
     }
     $context = $self->{session};
     my $method = SOAP::Data->name($methodname)->attr({xmlns => $xmlns});
-    my $client = $self->{client};
     # my @params = ServiceNow::SOAP::_params(@_);
     my $som = $client->endpoint($endpoint)->call($method => @_);
     Carp::croak $som->faultdetail if $som->fault;        
@@ -512,20 +529,19 @@ sub callMethod {
 
 sub traceBefore {
     my ($self, $methodname) = @_;
-    my $trace = $self->{trace};
-    return unless $trace;
     my $session = $self->{session};
+    my $trace = $session->{trace};
+    return unless $trace;
     my $tablename = $self->{name};
     $session->traceBefore($trace, "$tablename $methodname");
 }
 
 sub traceAfter {
     my ($self, $message, $content) = @_;
-    my $trace = $self->{trace};
-    return unless $trace;
     my $session = $self->{session};
-    my $client = $self->{client};
-    $session->traceAfter($trace, $client, $message, $content);
+    my $trace = $session->{trace};
+    return unless $trace;
+    $session->traceAfter($trace, $message, $content);
 }
 
 =head2 asQuery
@@ -1223,17 +1239,20 @@ L<"Return Display Value for Reference Variables"|http://wiki.servicenow.com/inde
 
 B<Syntax>
 
-    $table->setDV("true");
-    $table->setDV("all");
-    $table->setDv("");  # restore default setting
+    $table->setDv("");     # return sys_id only (default)
+    $table->setDV("true"); # return display value instead of sys_id
+    $table->setDV("all");  # return both sys_id and display value
+    $table->setDV(0);      # same as ""
+    $table->setDV(1);      # same as "true"
+    $table->setDV(2);      # same as "all"
 
 B<Examples>
 
-    my $sys_user_group = $session->table("sys_user_group")->setDV("true");
+    my $sys_user_group = $sn->table("sys_user_group")->setDV("true");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
     print "manager=", $grp->{manager}, "\n";
 
-    my $sys_user_group = $session->table("sys_user_group")->setDV("all");
+    my $sys_user_group = $sn->table("sys_user_group")->setDV("all");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
     print "manager=", $grp->{dv_manager}, "\n";
     
@@ -1241,6 +1260,9 @@ B<Examples>
 
 sub setDV {
     my ($self, $dv) = @_;
+    $dv = ''     if $dv eq '0';
+    $dv = 'true' if $dv eq '1';
+    $dv = 'all'  if $dv eq '2';
     $self->{dv} = $dv;
     return $self;
 }
@@ -1249,31 +1271,6 @@ sub setTrace {
     my ($self, $trace) = @_;
     $self->{trace} = $trace;
     return $self;
-}
-
-sub setChunk {
-    my $self = shift;
-    $self->{chunk} = shift || $DEFAULT_CHUNK;
-    return $self;
-}
-
-=head2 setTimeout
-
-Set the value of the SOAP Web Services client HTTP timeout.
-In addition, you may need to increase the ServiceNow system property
-C<glide.soap.request_processing_timeout>.
-    
-B<Syntax>
-
-    $table->setTimeout($seconds);
-    
-=cut
-
-sub setTimeout {
-    my ($self, $seconds) = @_;
-	$seconds = 180 unless defined($seconds) && $seconds =~ /\d+/;
-	$self->{client}->transport()->timeout($seconds);
-	return $self;
 }
 
 sub getSchema {
@@ -1375,9 +1372,9 @@ until all records have been retrieved.
 
 sub new {
     my ($pkg, $table) = @_;
+    my $session = $table->{session};
     return bless {
         table => $table,
-        chunk => $table->{chunk},
         count => 0,
         index => 0
     }, $pkg;
@@ -1425,15 +1422,16 @@ If there are no remaining records, then an empty list will be returned.
 
 B<Syntax>
     
-    my @recs = $query->fetch();
-    my @recs = $query->fetch($numrecs);
+    @recs = $query->fetch();
+    @recs = $query->fetch($numrecs);
 
 B<Example>
 
 This example prints the names of all active users.
 Each call to L</getRecords> returns up to 100 users.
 
-    my $query = $sn->table("sys_user")->query(active => "true", __order_by => "name");
+    my $sys_user = $sn->table("sys_user);
+    $sys_user->query(active => "true", __order_by => "name");
     while (@recs = $query->fetch(100)) {
         foreach my $rec (@recs) {
             print $rec->{name}, "\n";
@@ -1444,12 +1442,13 @@ Each call to L</getRecords> returns up to 100 users.
 
 sub fetch {
     my ($self, $chunk) = @_;
-    $chunk = $self->{chunk} unless $chunk;
+    my $table = $self->{table};
+    my $session = $table->{session};    
+    $chunk = $session->{fetch} unless $chunk;
     my @result;
     my $first = $self->{index};
     my $count = $self->{count};
     if ($first < $count) {
-        my $table = $self->{table};
         my $last = $first + $chunk - 1;
         my %params = %{$self->{params}};
         $params{__limit} = $chunk if $chunk;
@@ -1463,23 +1462,25 @@ sub fetch {
 
 =head2 fetchAll
 
-Fetch all the records in a Query by calling L</fetch> repeatedly
+This method fetches all the records in a Query by calling L</fetch> repeatedly
 until there are no more records.
-Returns a list of hashes.
-In a scalar context it returns a reference to an array of hashes.
+It takes an optional argument which is the number of records 
+to be retrieved per fetch.
+It returns a list of hashes.
 
 B<Syntax>
 
-    my @recs = $query->fetchAll();
-    my @recs = $query->fetchAll($chunkSize);
+    @recs = $query->fetchAll();
+    @recs = $query->fetchAll($numrecs);
     
 B<Example>
 
 This example prints the names of all active users.
-Each call to L</getRecords> returns up to 250 users
-since no chunk size was specified and the default is 250.
+Each call to L</getRecords> returns up to 250 records
+since no fetch size was specified and 250 is the default.
 
-    my @recs = $sn->table("sys_user")->query(active => "true", __order_by => "name")->fetchAll();
+    my $sys_user = $sn->table("sys_user);
+    my @recs = $sys_user->query(active => "true", __order_by => "name")->fetchAll();
     foreach my $rec (@recs) {
          print $rec->{name}, "\n";
     }
@@ -1488,7 +1489,6 @@ since no chunk size was specified and the default is 250.
 
 sub fetchAll {
     my ($self, $chunk) = @_;
-    $chunk = $self->{chunk} unless $chunk;
     my @result = ();
     while (my @recs = $self->fetch($chunk)) {
         push @result, @recs;
@@ -1569,38 +1569,6 @@ sub include {
     my $excl = $table->except(split /,/, join(',', @_));
     $self->exclude($excl);
     return $self;
-}
-
-=head2 setChunk
-
-This method sets the default chunk size
-(number of records per fetch)
-for subsequent calls to L</fetch> or L</fetchAll>.
-It returns a reference to the modified Query object.
-
-If C<setChunk> is not specified then 
-the default is 250 records per fetch.
-
-B<Syntax>
-
-    $query->setChunk($numrecs);
-
-B<Example>
-
-    my $rel_tbl = $sn->table("cmdb_rel_ci");
-    my @rel_data = $rel_tbl->query()->setChunk(1000)->fetchAll();
- 
-=cut
-
-sub setChunk {
-    my $self = shift;
-    $self->{chunk} = shift || $DEFAULT_CHUNK;
-    return $self;
-}
-
-sub getChunk {
-    my $self = shift;
-    return $self->{chunk};
 }
 
 sub setIndex {

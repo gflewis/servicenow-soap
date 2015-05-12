@@ -8,14 +8,16 @@ use lib 't';
 use TestUtil;
 
 unless (TestUtil::config) { plan skip_all => "no config" };
-my $sn = TestUtil::getSession(fetch => 500);
+my $sn1 = TestUtil::getSession(zip => 0, fetch => 500);
+my $sn2 = TestUtil::getSession(zip => 1, fetch => 500);
 
-my $computer = $sn->table('cmdb_ci_computer');
-my $query1 = $computer
-    ->query(operational => 1, sys_class_name => 'cmdb_ci_computer')
-    ->include("sys_id,name,sys_created_on,sys_updated_on");
+my $computer1 = $sn1->table('cmdb_ci_computer');
+my $computer2 = $sn2->table('cmdb_ci_computer');
+
+my $query1 = $computer1->query(operational => 1, sys_class_name => 'cmdb_ci_computer');
 my $count = $query1->getCount();
-my $query2 = $computer->asQuery($query1->getKeys());
+
+my $query2 = $computer2->asQuery($query1->getKeys());
 ok ($query2->getCount() == $count, "$count records in query");
 
 my $start1 = Time::HiRes::time();
@@ -34,7 +36,7 @@ my $elapsed1 = $finish1 - $start1;
 my $elapsed2 = $finish2 - $start2;
 printf "query1 elapsed %.2f\n", $elapsed1;
 printf "query2 elapsed %.2f\n", $elapsed2;
-ok ($elapsed2 > $elapsed1, "first query was faster");
+ok ($elapsed2 < $elapsed1, "second query was faster");
 
 done_testing();
 

@@ -36,11 +36,12 @@ sub getUsername {
 }
 
 sub getSession {
-    my $trace = defined $_[0] ? $_[0] : 1;
+    my %opt = @_;
+    $opt{trace} = 1 unless defined $opt{trace};
     my $instance = $config->{instance};
     my $user = $config->{username};
     my $pass = $config->{password};
-    return ServiceNow($instance, $user, $pass, $trace);    
+    return ServiceNow($instance, $user, $pass, %opt);
 }
 
 sub isGUID { 
@@ -64,7 +65,7 @@ sub timestamp {
 }
 
 sub today {
-	my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
+	my ($sec, $min, $hour, $mday, $mon, $year) = gmtime;
     return sprintf("%04d-%02d-%02d", 1900 + $year, 1 + $mon, $mday);
 }
 
