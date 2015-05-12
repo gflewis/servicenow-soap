@@ -15,6 +15,8 @@ use Carp;
 
 our $VERSION = '0.10';
 
+$SOAP::Constants::DO_NOT_USE_LWP_LENGTH_HACK = 1;
+
 =head1 NAME
 
 ServiceNow::SOAP - A better Perl API for ServiceNow
@@ -171,7 +173,7 @@ sub _params {
         my $value = shift;
         warn "Parameter name appears to be a sys_id"
             if $name =~ /^[0-9A-Fa-f]{32}$/;
-        push @params, SOAP::Data->name($name, $value);
+        push @params, SOAP::Data->name($name, $value)->type('string');
     }
     if (@_) {
         # there is one parameter left
@@ -244,8 +246,7 @@ sub new {
     my $endpoint = "$url/sys_user.do?SOAP";
     my $cookiejar = HTTP::Cookies->new(ignore_discard => 1);
     my @params = (cookie_jar => $cookiejar);
-    push @params, compress_threshold => $zip if $zip;
-    print join(",", @params), "\n";
+    push @params, options => {compress_threshold => $zip} if $zip;
     my $client = SOAP::Lite->proxy($endpoint, @params);
     my $session = {
         url => $url,
