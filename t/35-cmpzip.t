@@ -7,15 +7,20 @@ use Test::More;
 use lib 't';
 use TestUtil;
 
+# SOAP::Lite->import(+trace => 'debug');
+
 unless (TestUtil::config) { plan skip_all => "no config" };
-my $sn1 = TestUtil::getSession(zip => 0, fetch => 500);
-my $sn2 = TestUtil::getSession(zip => 1, fetch => 500);
+my $sn1 = TestUtil::getSession(zip => 10, fetch => 500);
+my $sn2 = TestUtil::getSession(zip => 0, fetch => 500);
 
 my $computer1 = $sn1->table('cmdb_ci_computer');
 my $computer2 = $sn2->table('cmdb_ci_computer');
 
-my $query1 = $computer1->query(operational => 1, sys_class_name => 'cmdb_ci_computer');
+my $query1 = $computer1->query(
+    operational => 1, sys_class_name => 'cmdb_ci_computer');
 my $count = $query1->getCount();
+
+exit();
 
 my $query2 = $computer2->asQuery($query1->getKeys());
 ok ($query2->getCount() == $count, "$count records in query");
