@@ -209,6 +209,34 @@ The first argument to this function is the instance,
 which can be either a fully qualified URL
 (I<e.g.> C<"https://mycompanydev.service-now.com">)
 or an instance name (I<e.g.> C<"mycompanydev">).
+The second argument is the user name.
+The third argument is the password.
+
+Various options can be specified as
+name value pairs following the password.
+The list of available options is as follows:
+
+=cut
+
+=item *
+
+C<dv> - Specify a default value for Display Values.
+This can be overridden at the Table level.
+Default is 0.
+For details see L</setDV>.
+
+=item *
+
+C<fetch> - Specify default number of records to be retrieved
+by L</fetch>. Default is 250.
+
+=item *
+
+C<trace> - Specify a trace level.
+Refer to L<DIAGNOSTICS> below.
+Default is 0.
+
+=back
 
 B<Syntax>
 
@@ -224,7 +252,7 @@ The following two statements are equivalent.
 Various options can be specified as name/value pairs following the password.
 
     my $sn = ServiceNow("mycompanydev", $username, $password,
-        dv => "all", zip => 1, trace => 1);
+        dv => "all", trace => 1);
         
 =head1 ServiceNow::SOAP::Session
 
@@ -236,7 +264,6 @@ sub new {
     my ($pkg, $url, $user, $pass, @options) = @_;
     my %opt = @options;
     my $trace = $opt{trace} || 0;
-    my $zip = $opt{zip} || 0;
     # strip off any trailing slash
     $url =~ s/\/$//; 
     # append '.service-now.com' unless the URL contains a '.'
@@ -246,7 +273,6 @@ sub new {
     my $endpoint = "$url/sys_user.do?SOAP";
     my $cookiejar = HTTP::Cookies->new(ignore_discard => 1);
     my @params = (cookie_jar => $cookiejar);
-    push @params, options => {compress_threshold => $zip} if $zip;
     my $client = SOAP::Lite->proxy($endpoint, @params);
     my $session = {
         url => $url,
@@ -257,7 +283,6 @@ sub new {
         fetch => $opt{fetch} || 250,
         query => $opt{query} || 10000,
         trace => $trace,
-        zip => $zip,
         client => $client
     };
     bless $session, $pkg;
