@@ -24,86 +24,89 @@
   </li>
   <li><a href="#ServiceNow::SOAP::Session">ServiceNow::SOAP::Session</a>
     <ul>
-      <li><a href="#connect">connect</a></li>
       <li><a href="#call">call</a></li>
-      <li><a href="#table">table</a></li>
-      <li><a href="#saveSession">saveSession</a></li>
+      <li><a href="#connect">connect</a></li>
       <li><a href="#loadSession">loadSession</a></li>
+      <li><a href="#saveSession">saveSession</a></li>
+      <li><a href="#soap">soap</a></li>
+      <li><a href="#table">table</a></li>
     </ul>
   </li>
   <li><a href="#ServiceNow::SOAP::Table">ServiceNow::SOAP::Table</a>
     <ul>
+      <li><a href="#asQuery">asQuery</a></li>
+      <li><a href="#attachFile">attachFile</a></li>
       <li><a href="#columns">columns</a></li>
       <li><a href="#count">count</a></li>
+      <li><a href="#deleteRecord">deleteRecord</a></li>
+      <li><a href="#except">except</a></li>
       <li><a href="#get">get</a></li>
       <li><a href="#getKeys">getKeys</a></li>
-      <li><a href="#getRecords">getRecords</a></li>
       <li><a href="#getRecord">getRecord</a></li>
+      <li><a href="#getRecords">getRecords</a></li>
       <li><a href="#insert">insert</a></li>
       <li><a href="#insertMultiple">insertMultiple</a></li>
       <li><a href="#update">update</a></li>
-      <li><a href="#deleteRecord">deleteRecord</a></li>
       <li><a href="#query">query</a></li>
-      <li><a href="#asQuery">asQuery</a></li>
-      <li><a href="#attachFile">attachFile</a></li>
       <li><a href="#getVariables">getVariables</a></li>
       <li><a href="#setDV">setDV</a></li>
-      <li><a href="#setTimeout">setTimeout</a></li>
-      <li><a href="#except">except</a></li>
     </ul>
   </li>
   <li><a href="#ServiceNow::SOAP::Query">ServiceNow::SOAP::Query</a>
     <ul>
       <li><a href="#exclude">exclude</a></li>
-      <li><a href="#include">include</a></li>
       <li><a href="#fetch">fetch</a></li>
       <li><a href="#fetchAll">fetchAll</a></li>
-      <li><a href="#setChunk">setChunk</a></li>
       <li><a href="#getCount">getCount</a></li>
       <li><a href="#getKeys1">getKeys</a></li>
+      <li><a href="#include">include</a></li>
     </ul>
   </li>
   <li><a href="#DIAGNOSTICS">DIAGNOSTICS</a></li>
   <li><a href="#AUTHOR">AUTHOR</a></li>
   <li><a href="#ACKNOWLEDGEMENTS">ACKNOWLEDGEMENTS</a></li>
   <li><a href="#LICENSE">LICENSE</a></li>
+  <li><a href="#POD-ERRORS">POD ERRORS</a></li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
 
-<p>ServiceNow::SOAP - A better perl API for ServiceNow</p>
+<p>ServiceNow::SOAP - A better Perl API for ServiceNow</p>
 
 <h1 id="SYNOPSIS">SYNOPSIS</h1>
 
 <pre><code>    # return a reference to a session object
-    my $sn = ServiceNow($instancename, $username, $password);
+    $sn = ServiceNow($instancename, $username, $password);
     
     # return a reference to a table object
-    my $table = $sn-&gt;table($tablename);
+    $table = $sn-&gt;table($tablename);
 
     # count records
-    my $count = $table-&gt;count(%parameters);
+    $count = $table-&gt;count(%parameters);
     
     # return a list of sys_ids
-    my @keys = $table-&gt;getKeys(%parameters);
+    @keys = $table-&gt;getKeys(%parameters);
     
     # return a single record as a hash
-    my $rec = $table-&gt;get(sys_id =&gt; $sys_id);
+    $rec = $table-&gt;get(sys_id =&gt; $sys_id);
     
     # return a set of records as an array of hashes
-    my @recs = $table-&gt;getRecords(%parameters);
+    @recs = $table-&gt;getRecords(%parameters);
 
     # call getKeys and return a query object
-    my $qry = $table-&gt;query(%parameters);
+    $qry = $table-&gt;query(%parameters);
     
     # fetch the next chunk of records
-    my @recs = $qry-&gt;fetch($numrecs);
+    @recs = $qry-&gt;fetch($numrecs);
 
     # retrieve a record based on a unique key other than sys_id
-    my $rec = $table-&gt;getRecord($name =&gt; $value);
+    $rec = $table-&gt;getRecord($name =&gt; $value);
     
     # insert a record
-    $table-&gt;insert(%parameters);
+    $sys_id = $table-&gt;insert(%parameters);
+    
+    # insert multiple records
+    @results = $table-&gt;insert(@records);
     
     # update a record
     $table-&gt;update(%parameters);
@@ -166,7 +169,7 @@
 
 <p>Retrieve a single record based on sys_id.</p>
 
-<pre><code>    my $rec = $incident_tbl-&gt;get(sys_id =&gt; $sys_id);
+<pre><code>    my $rec = $incident_tbl-&gt;get($sys_id);
     print &quot;number=&quot;, $rec-&gt;{number}, &quot;\n&quot;;</code></pre>
 
 <p>Retrieve a single record based on number.</p>
@@ -177,8 +180,7 @@
 
 <p>Update a record.</p>
 
-<pre><code>    $incident_tbl-&gt;update(
-        sys_id =&gt; $sys_id,
+<pre><code>    $incident_tbl-&gt;update($sys_id,
         assigned_to =&gt; &quot;Fred Luddy&quot;,
         incident_state =&gt; 2);
     </code></pre>
@@ -191,13 +193,13 @@
 
 <ul>
 
-<li><p>Simplified API which closely mirrors ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API">Direct Web Services API</a>.</p>
+<li><p>Support for both Direct Web Services and Scripted Web Services.</p>
 
 </li>
-<li><p>Efficient and easy to use methods for reading large tables which overcome ServiceNow&#39;s built-in limitation of 250 records per SOAP Web Services call, and adhere to ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">best practice recommendations</a> for querying data via Web Services.</p>
+<li><p>Simplified API which closely mirrors ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API">Direct Web Services API</a> documentation.</p>
 
 </li>
-<li><p>Specialized functions such as <a href="#attachFile">&quot;attachFile&quot;</a> and <a href="#getVariables">&quot;getVariables&quot;</a>.</p>
+<li><p>Robust, easy to use methods for reading large amounts of data which adhere to ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries">best practice recommendations</a>.</p>
 
 </li>
 </ul>
@@ -206,17 +208,28 @@
 
 <h2 id="ServiceNow">ServiceNow</h2>
 
-<p>This method <code>ServiceNow</code> (which is essentially an alias for ServiceNow::SOAP::Session-&gt;new() is used to obtain a reference to a Session object. The Session object essentially holds the URL and connection credentials for your ServiceNow instance.</p>
+<p>This <code>ServiceNow</code> function (which is essentially an alias for <code>ServiceNow::SOAP::Session-&gt;new()</code>) is used to obtain a reference to a Session object. The Session object essentially holds the URL and connection credentials for your ServiceNow instance, and the SOAP::Lite object.</p>
 
-<p>The first argument is the URL or instance name. The second argument is the user name. The third argument is the password.</p>
+<p>The first argument to this function is the instance, which can be either a fully qualified URL (<i>e.g.</i> <code>&quot;https://mycompanydev.service-now.com&quot;</code>) or an instance name (<i>e.g.</i> <code>&quot;mycompanydev&quot;</code>). The second argument is the user name. The third argument is the password.</p>
 
-<p>The fourth (optional) argument is an integer trace level which can be helpful for debugging. For details refer to <a href="#DIAGNOSTICS">&quot;DIAGNOSTICS&quot;</a> below.</p>
+<p>Various options can be specified as name value pairs following the password. The list of available options is as follows:</p>
+
+<ul>
+
+<li><p><code>dv</code> - Specify a default value for Display Values. This can be overridden at the Table level. Default is 0. For details see <a href="#setDV">&quot;setDV&quot;</a>.</p>
+
+</li>
+<li><p><code>fetch</code> - Specify default number of records to be retrieved by <a href="#fetch">&quot;fetch&quot;</a>. Default is 250.</p>
+
+</li>
+<li><p><code>trace</code> - Specify a trace level. Refer to <a>DIAGNOSTICS</a> below. Default is 0.</p>
+
+</li>
+</ul>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    my $sn = ServiceNow($instancename, $username, $password);
-    my $sn = ServiceNow($instanceurl, $username, $password);
-    my $sn = ServiceNow($instancename, $username, $password, $tracelevel);
+<pre><code>    my $sn = ServiceNow($instance, $username, $password, %options);
     </code></pre>
 
 <p><b>Examples</b></p>
@@ -224,23 +237,15 @@
 <p>The following two statements are equivalent.</p>
 
 <pre><code>    my $sn = ServiceNow(&quot;https://mycompanydev.service-now.com&quot;, &quot;soap.perl&quot;, $password);
-    my $sn = ServiceNow(&quot;mycompanydev&quot;, &quot;soap.perl&quot;, $password);
-    </code></pre>
+    my $sn = ServiceNow(&quot;mycompanydev&quot;, &quot;soap.perl&quot;, $password);</code></pre>
 
-<p>Tracing of Web Services calls can be enabled by passing in a fourth parameter. For details refer to <a href="#DIAGNOSTICS">&quot;DIAGNOSTICS&quot;</a> below.</p>
+<p>Various options can be specified as name/value pairs following the password.</p>
 
-<pre><code>    my $sn = ServiceNow(&quot;mycompanydev&quot;, &quot;soap.perl&quot;, $password, 1);</code></pre>
+<pre><code>    my $sn = ServiceNow(&quot;mycompanydev&quot;, $username, $password,
+        dv =&gt; &quot;all&quot;, trace =&gt; 1);
+        </code></pre>
 
 <h1 id="ServiceNow::SOAP::Session">ServiceNow::SOAP::Session</h1>
-
-<h2 id="connect">connect</h2>
-
-<p>Use of this method is optional, but sometimes you want to know up front whether your connection credentials are valid. This method tests them by attempting to get the user&#39;s profile from <code>sys_user</code> using <code>getRecords</code>, and trapping the error. If successful, the session object is returned. If unsuccessful, null is returned and the error message is in $@.</p>
-
-<p><b>Syntax</b></p>
-
-<pre><code>    my $sn = ServiceNow($instancename, $username, $password)-&gt;connect()
-        or die &quot;Unable to connect to $instancename: $@&quot;;</code></pre>
 
 <h2 id="call">call</h2>
 
@@ -260,35 +265,48 @@
         requested_for =&gt; &#39;Fred Luddy&#39;);
     print &quot;created request &quot;, $outputs{request_number}, &quot;\n&quot;;</code></pre>
 
-<h2 id="table">table</h2>
+<h2 id="connect">connect</h2>
 
-<p>Used to obtain a Table object. The Table object is subsequently used for <a href="#ServiceNow::SOAP::Table">&quot;ServiceNow::SOAP::Table&quot;</a> methods described below.</p>
+<p>Use of this method is optional, but sometimes you want to know up front whether your connection credentials are valid. This method tests them by attempting to get the user&#39;s profile from <code>sys_user</code> using <code>getRecords</code>, and trapping the error. If successful, the session object is returned. If unsuccessful, null is returned and the error message is in $@.</p>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    my $table = $sn-&gt;table($tablename);</code></pre>
+<pre><code>    my $sn = ServiceNow($instancename, $username, $password)-&gt;connect()
+        or die &quot;Unable to connect to $instancename: $@&quot;;</code></pre>
 
-<p><b>Example</b></p>
+<h2 id="loadSession">loadSession</h2>
 
-<pre><code>    my $computer_tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
+<p>This method loads the session information (i.e. cookies) from a file. This may be required if you are running the same perl script multiple times (each time in a separate process) and you do not want to establish a separate ServiceNow session each time the script is run. Use <a href="#saveSession">&quot;saveSession&quot;</a> to save the session identifier to a file and this method to load the session identifier from the file.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    $sn-&gt;loadSession($filename);
     </code></pre>
 
 <h2 id="saveSession">saveSession</h2>
 
-<p>Saves the session information to a file. See <a href="#loadSession">&quot;loadSession&quot;</a>.</p>
+<p>This method saves the session information (i.e. cookies) to a file. For usage notes refer to <a href="#loadSession">&quot;loadSession&quot;</a> above.</p>
 
 <p><b>Syntax</b></p>
 
 <pre><code>    $sn-&gt;saveSession($filename);
     </code></pre>
 
-<h2 id="loadSession">loadSession</h2>
+<h2 id="soap">soap</h2>
 
-<p>Loads the session information from a file. This may be required if you are running the same perl script over and over (each time in a separate process) and you do not want to establish a separate ServiceNow session each time the script is run.</p>
+<p>This method returns a reference to the underlying SOAP::Lite object.</p>
+
+<h2 id="table">table</h2>
+
+<p>Used to obtain a reference to a Table object. The Table object is subsequently used for <a href="#ServiceNow::SOAP::Table">&quot;ServiceNow::SOAP::Table&quot;</a> methods described below.</p>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    $sn-&gt;loadSession($filename);
+<pre><code>    $table = $sn-&gt;table($tablename);</code></pre>
+
+<p><b>Example</b></p>
+
+<pre><code>    my $computer_tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
     </code></pre>
 
 <h1 id="ServiceNow::SOAP::Table">ServiceNow::SOAP::Table</h1>
@@ -296,6 +314,47 @@
 <p>Table objects are used for ServiceNow&#39;s <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API">Direct Web Services API</a>. A Table object holds the URI for a SOAP endpoint and the corresponding SOAP::Lite object.</p>
 
 <p>To obtain a Table object, use the <a href="#table">&quot;table&quot;</a> method describe above.</p>
+
+<p>These Table object methods provide an interface to the Direct Web Services API: <a href="#deleteRecord">&quot;deleteRecord&quot;</a>, <a href="#get">&quot;get&quot;</a>, <a href="#getKeys">&quot;getKeys&quot;</a>, <a href="#getRecords">&quot;getRecords&quot;</a>, <a href="#insert">&quot;insert&quot;</a>, <a href="#insertMultiple">&quot;insertMultiple&quot;</a>, <a href="#update">&quot;update&quot;</a>.</p>
+
+<h2 id="asQuery">asQuery</h2>
+
+<p>This method creates a new <a href="#ServiceNow::SOAP::Query">Query</a> object from a list of keys. It does not make any Web Services calls. It simply makes a copy of the list. Each item in the list must be a <b>sys_id</b> for the respective table.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    my $query = $table-&gt;asQuery(@keys);</code></pre>
+
+<p><b>Example</b></p>
+
+<p>In this example, we assume that <code>@incRecs</code> contains an array of <code>incident</code> records from a previous query. We need an array of <code>sys_user_group</code> records for all referenced assignment groups. We use <code>map</code> to extract a list of assignment group keys from the <code>@incRecs</code>; <code>grep</code> to discard the blanks; and <code>uniq</code> to discard the duplicates. <code>@grpKeys</code> contains the list of <code>sys_user_group</code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a>. <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
+
+<pre><code>    use List::MoreUtils qw(uniq);
+
+    my @grpKeys = uniq grep { !/^$/ } map { $_-&gt;{assignment_group} } @incRecs;
+    my @grpRecs = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;asQuery(@grpKeys)-&gt;fetchAll();
+        </code></pre>
+
+<h2 id="attachFile">attachFile</h2>
+
+<p>If you are using Perl to create incident tickets, then you may have a requirement to attach files to those tickets.</p>
+
+<p>This method implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The method requires <code>soap_ecc</code> role.</p>
+
+<p>You will need to specify a MIME type. If no type is specified, this function will use a default type of &quot;text/plain&quot;. For a list of MIME types, refer to <a href="http://en.wikipedia.org/wiki/Internet_media_type">http://en.wikipedia.org/wiki/Internet_media_type</a>.</p>
+
+<p>When you attach a file to a ServiceNow record, you can also specify an attachment name which is different from the actual file name. If no attachment name is specified, this function will assume that the attachment name is the same as the file name.</p>
+
+<p>This function will die if the file cannot be read.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    $table-&gt;attachFile($sys_id, $filename, $mime_type, $attachment_name);</code></pre>
+
+<p><b>Example</b></p>
+
+<pre><code>    $incident-&gt;attachFile($sys_id, &quot;screenshot.png&quot;, &quot;image/png&quot;);
+    </code></pre>
 
 <h2 id="columns">columns</h2>
 
@@ -330,9 +389,42 @@
 <pre><code>    my $count = $sn-&gt;table(&quot;sys_user&quot;)-&gt;count(active =&gt; true);
     </code></pre>
 
+<h2 id="deleteRecord">deleteRecord</h2>
+
+<p>Deletes a record. For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord">&quot;deleteRecord&quot; Direct SOAP API method</a>.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    $table-&gt;deleteRecord(sys_id =&gt; $sys_id);
+    $table-&gt;deleteRecord($sys_id);</code></pre>
+
+<h2 id="except">except</h2>
+
+<p>This method returns a list of all columns in the table <b>except</b> those in the argument list. The argument(s) to this method can be either a string containing a comma separated list of names or a list of names (i.e. <code>qw</code>). This method returns a string containing a comma separated list of names.</p>
+
+<p>The [only useful] purpose of this function is to that you can pass the result back in as an <code>__exclude_columns</code> <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters">extended query parameter</a>.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    my $names = $table-&gt;except(@list_of_columns);
+    my $names = $table-&gt;except($comma_separated_list_of_columns);
+    </code></pre>
+
+<p><b>Example</b></p>
+
+<p>This example retrieves the columns sys_id, number and description from the incident table. In other words, the result excludes all columns except sys_id, number and description.</p>
+
+<pre><code>    my $incident = $sn-&gt;table(&quot;incident&quot;);
+    my @recs = $incident-&gt;getRecords(
+        __encoded_query =&gt; &quot;sys_created_on&gt;=$datetime&quot;,
+        __exclude_columns =&gt; 
+            $incident-&gt;except(&quot;sys_id,number,description&quot;),
+        __limit =&gt; 250);
+ </code></pre>
+
 <h2 id="get">get</h2>
 
-<p>This method retrieves a single record. The result is returned as a reference to a hash.</p>
+<p>This method retrieves a single record based on sys_id. The result is returned as a reference to a hash.</p>
 
 <p>If no matching record is found then null is returned.</p>
 
@@ -371,6 +463,38 @@
     my @keys = $cmdb_ci_computer-&gt;getKeys(&quot;operational_status=1^virtual=false&quot;);
     </code></pre>
 
+<h2 id="getRecord">getRecord</h2>
+
+<p>This method returns a single qualifying records. The method returns null if there are no qualifying records. The method will <b>die</b> if there are multiple qualifying records.</p>
+
+<p>This method is typically used to retrieve a record based on number or name.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    $rec = $table-&gt;getRecord(%parameters);
+    $rec = $table-&gt;getRecord($encodedquery);
+    </code></pre>
+
+<p><b>Example</b></p>
+
+<p>This example retrieves a <b>change_request</b> record based on <b>number</b>.</p>
+
+<pre><code>    my $chgRec = $sn-&gt;table(&quot;change_request&quot;)-&gt;getRecord(number =&gt; $number);
+    if ($chgRec) {
+        print &quot;Short description = &quot;, $chgRec-&gt;{short_description}, &quot;\n&quot;;
+    }
+    else {
+        print &quot;$number not found\n&quot;;
+    }</code></pre>
+
+<p>The following two equivalent examples illustrate the relationship between <a href="#getRecord">&quot;getRecord&quot;</a> and <a href="#getRecords">&quot;getRecords&quot;</a>.</p>
+
+<pre><code>    my @recs = $table-&gt;getRecords(%parameters);
+    die &quot;Too many records&quot; if scalar(@recs) &gt; 1;
+    my $rec = $recs[0];
+
+    my $rec = $table-&gt;getRecord(%parameters);</code></pre>
+
 <h2 id="getRecords">getRecords</h2>
 
 <p>This method returns a list of records. Actually, it returns a list of hash references. You may pass this method either a single encoded query string, or a list of name/value pairs.</p>
@@ -394,39 +518,9 @@
     }
     </code></pre>
 
-<h2 id="getRecord">getRecord</h2>
-
-<p>This method returns a single qualifying records. The method returns null if there are no qualifying records. The method will <b>die</b> if there are multiple qualifying records.</p>
-
-<p><b>Syntax</b></p>
-
-<pre><code>    $rec = $table-&gt;getRecord(%parameters);
-    $rec = $table-&gt;getRecord($encodedquery);
-    </code></pre>
-
-<p><b>Example</b></p>
-
-<pre><code>    my $number = &quot;CHG12345&quot;;
-    my $chgRec = $sn-&gt;table(&quot;change_request&quot;)-&gt;getRecord(number =&gt; $number);
-    if ($chgRec) {
-        print &quot;Short description = &quot;, $chgRec-&gt;{short_description}, &quot;\n&quot;;
-    }
-    else {
-        print &quot;$number not found\n&quot;;
-    }</code></pre>
-
-<p>The following two examples are equivalent.</p>
-
-<pre><code>    my $rec = $table-&gt;getRecord(%parameters);
-    
-    my @recs = $table-&gt;getRecords(%parameters);
-    die &quot;Too many records&quot; if scalar(@recs) &gt; 1;
-    my $rec = $recs[0];
-    </code></pre>
-
 <h2 id="insert">insert</h2>
 
-<p>This method inserts a record. In a scalar context, this method returns a sys_id only. In a list context, this method returns a list of name/value pairs.</p>
+<p>This method inserts a record. In a scalar context, this method returns a <b>sys_id</b> only. In a list context, this method returns a list of name/value pairs.</p>
 
 <p>For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#insert">&quot;insert&quot; Direct SOAP API method</a>.</p>
 
@@ -440,7 +534,7 @@
 
 <pre><code>    my $incident = $sn-&gt;table(&quot;incident&quot;);</code></pre>
 
-<p>In a scalar context, the function returns a sys_id.</p>
+<p>In a scalar context, the function returns a <b>sys_id</b>.</p>
 
 <pre><code>    my $sys_id = $incident-&gt;insert(
         short_description =&gt; $short_description,
@@ -469,9 +563,9 @@
 
 <h2 id="insertMultiple">insertMultiple</h2>
 
-<p>This method inserts multiple records.</p>
+<p>This method inserts multiple records. The input is an array of hash references. It returns an array of hash references.</p>
 
-<p>The input is an array of hash references. It returns an array of hash references.</p>
+<p>This method requires installation of the <a href="http://wiki.servicenow.com/index.php?title=Web_Service_Import_Sets#Inserting_Multiple_Records">ServiceNow Insert Multiple Web Services Plugin</a>.</p>
 
 <p>For additional information refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#insertMultiple">&quot;insertMultiple&quot; Direct SOAP API method</a>.</p>
 
@@ -527,15 +621,6 @@
         assigned_to =&gt; &quot;Fred Luddy&quot;, 
         incident_state =&gt; 2);</code></pre>
 
-<h2 id="deleteRecord">deleteRecord</h2>
-
-<p>Deletes a record. For information on available parameters refer to the ServiceNow documentation on the <a href="http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord">&quot;deleteRecord&quot; Direct SOAP API method</a>.</p>
-
-<p><b>Syntax</b></p>
-
-<pre><code>    $table-&gt;deleteRecord(sys_id =&gt; $sys_id);
-    $table-&gt;deleteRecord($sys_id);</code></pre>
-
 <h2 id="query">query</h2>
 
 <p>This method creates a new <a href="#ServiceNow::SOAP::Query">Query</a> object by calling <a href="#getKeys">&quot;getKeys&quot;</a>.</p>
@@ -543,57 +628,18 @@
 <p><b>Syntax</b></p>
 
 <pre><code>    my $query = $table-&gt;query(%parameters);
-    my $query = $table-&gt;query($encodedquery};
+    my $query = $table-&gt;query($encodedquery);
     </code></pre>
 
 <p><b>Example</b></p>
 
-<p>The following example builds a list of all Incidents created between 1/1/2014 and 2/1/2014 sorted by creation date/time. The <code>fetchAll</code> method fetches chunks of records until all records have been retrieved.</p>
+<p>The following example builds a list of all Incidents created between 1/1/2014 and 2/1/2014 sorted by creation date/time. The <a href="#fetchAll">&quot;fetchAll&quot;</a> method fetches chunks of records until all records have been retrieved.</p>
 
 <pre><code>    my $filter = &quot;sys_created_on&gt;=2014-01-01^sys_created_on&lt;2014-02-01&quot;;
     my $qry = $sn-&gt;table(&quot;incident&quot;)-&gt;query(
         __encoded_query =&gt; $filter,
-        __order_by =&gt; &quot;sys_created_on);
+        __order_by =&gt; &quot;sys_created_on&quot;);
     my @recs = $qry-&gt;fetchAll();</code></pre>
-
-<h2 id="asQuery">asQuery</h2>
-
-<p>This method creates a new <a href="#ServiceNow::SOAP::Query">Query</a> object from a list of keys. It does not make any Web Services calls. It simply makes a copy of the list. Each item in the list must be a sys_id for the respective table.</p>
-
-<p><b>Syntax</b></p>
-
-<pre><code>    my $query = $table-&gt;asQuery(@keys);</code></pre>
-
-<p><b>Example</b></p>
-
-<p>In this example, we assume that <code>@incRecs</code> contains an array of <code>incident</code> records from a previous query. We need an array of <code>sys_user_group</code> records for all referenced assignment groups. We use <code>map</code> to extract a list of assignment group keys from the <code>@incRecs</code>; <code>grep</code> to discard the blanks; and <code>uniq</code> to discard the duplicates. <code>@grpKeys</code> contains the list of <code>sys_user_group</code> keys. This array is then used to construct a new Query using <a href="#asQuery">&quot;asQuery&quot;</a>. <a href="#fetchAll">&quot;fetchAll&quot;</a> is used to retrieve the records.</p>
-
-<pre><code>    use List::MoreUtils qw(uniq);
-
-    my @grpKeys = uniq grep { !/^$/ } map { $_-&gt;{assignment_group} } @incRecs;
-    my @grpRecs = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;asQuery(@grpKeys)-&gt;fetchAll();
-        </code></pre>
-
-<h2 id="attachFile">attachFile</h2>
-
-<p>If you are using Perl to create incident tickets, then you may have a requirement to attach files to those tickets.</p>
-
-<p>This method implements the <a href="http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service">attachment creator API</a>. The method requires <code>soap_ecc</code> role.</p>
-
-<p>You will need to specify a MIME type. If no type is specified, this function will use a default type of &quot;text/plain&quot; For a list of MIME types, refer to <a href="http://en.wikipedia.org/wiki/Internet_media_type">http://en.wikipedia.org/wiki/Internet_media_type</a>.</p>
-
-<p>When you attach a file to a ServiceNow record, you can also specify an attachment name which is different from the actual file name. If no attachment name is specified, this function will assume that the attachment name is the same as the file name.</p>
-
-<p>This function will die if the file cannot be read.</p>
-
-<p><b>Syntax</b></p>
-
-<pre><code>    $table-&gt;attachFile($sys_id, $filename, $mime_type, $attachment_name);</code></pre>
-
-<p><b>Example</b></p>
-
-<pre><code>    $incident-&gt;attachFile($sys_id, &quot;screenshot.png&quot;, &quot;image/png&quot;);
-    </code></pre>
 
 <h2 id="getVariables">getVariables</h2>
 
@@ -641,53 +687,27 @@
 
 <p>Used to enable (or disable) display values in queries. All subsequent calls to <a href="#get">&quot;get&quot;</a>, <a href="#getRecords">&quot;getRecords&quot;</a> or <a href="#getRecord">&quot;getRecord&quot;</a> for this table will be affected. This method returns the modified Table object.</p>
 
-<p>For additional information regarding display values refer to the ServiceNow documentation on <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables">&quot;Return Display Value for Reference Variables&quot;</a></p>
+<p>For additional information regarding display values refer to the ServiceNow documentation on <a href="http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Return_Display_Value_for_Reference_Variables">&quot;Return Display Value for Reference Variables&quot;</a>.</p>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    $table-&gt;setDV(&quot;true&quot;);
-    $table-&gt;setDV(&quot;all&quot;);
-    $table-&gt;setDv(&quot;&quot;);  # restore default setting</code></pre>
+<pre><code>    $table-&gt;setDv(&quot;&quot;);     # return sys_id only (default)
+    $table-&gt;setDV(&quot;true&quot;); # return display value instead of sys_id
+    $table-&gt;setDV(&quot;all&quot;);  # return both sys_id and display value
+    $table-&gt;setDV(0);      # same as &quot;&quot;
+    $table-&gt;setDV(1);      # same as &quot;true&quot;
+    $table-&gt;setDV(2);      # same as &quot;all&quot;</code></pre>
 
 <p><b>Examples</b></p>
 
-<pre><code>    my $sys_user_group = $session-&gt;table(&quot;sys_user_group&quot;)-&gt;setDV(&quot;true&quot;);
+<pre><code>    my $sys_user_group = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;setDV(&quot;true&quot;);
     my $grp = $sys_user_group-&gt;getRecord(name =&gt; &quot;Network Support&quot;);
     print &quot;manager=&quot;, $grp-&gt;{manager}, &quot;\n&quot;;
 
-    my $sys_user_group = $session-&gt;table(&quot;sys_user_group&quot;)-&gt;setDV(&quot;all&quot;);
+    my $sys_user_group = $sn-&gt;table(&quot;sys_user_group&quot;)-&gt;setDV(&quot;all&quot;);
     my $grp = $sys_user_group-&gt;getRecord(name =&gt; &quot;Network Support&quot;);
     print &quot;manager=&quot;, $grp-&gt;{dv_manager}, &quot;\n&quot;;
     </code></pre>
-
-<h2 id="setTimeout">setTimeout</h2>
-
-<p>Set the value of the SOAP Web Services client HTTP timeout. In addition, you may need to increase the ServiceNow system property <code>glide.soap.request_processing_timeout</code>.</p>
-
-<p><b>syntax</b></p>
-
-<pre><code>    $table-&gt;setTimeout($seconds);
-    </code></pre>
-
-<h2 id="except">except</h2>
-
-<p>This method accepts as argument either a list of column names or a string containing a comma separated list of column names. It returns a comma separated list of the column names which are <b>NOT</b> in the argument list.</p>
-
-<p><b>Syntax</b></p>
-
-<pre><code>    my $names = $table-&gt;except(@list_of_columns);
-    my $names = $table-&gt;except($comma_separated_list_of_columns);
-    </code></pre>
-
-<p><b>Example</b></p>
-
-<pre><code>    my $incident = $sn-&gt;table(&quot;incident&quot;);
-    my @recs = $incident-&gt;getRecords(
-        __encoded_query =&gt; &quot;sys_created_on&gt;=$datetime,
-        __exclude_columns =&gt; 
-            $incident-&gt;except(&quot;sys_id,number,description&quot;),
-        __limit =&gt; 250);
- </code></pre>
 
 <h1 id="ServiceNow::SOAP::Query">ServiceNow::SOAP::Query</h1>
 
@@ -734,35 +754,15 @@
 
 <h2 id="exclude">exclude</h2>
 
-<p>This method limits the list of columns that will be returned for any subsequent calls to <a href="#fetch">&quot;fetch&quot;</a>.</p>
+<p>This method will affect any subsequent calls to <a href="#fetch">&quot;fetch&quot;</a>. Any columns not specified in the argument(s) will be excluded from the returned result. By excluding unneeded columns from the query result, it is possible to significantly improve the performance of large queries. For a simpler way to achieve this objective, refer to the <a href="#include">&quot;include&quot;</a> method below.</p>
 
 <p>You may pass this method either a list of column names, or a string containing a comma delimited list of names. It will override any prior calls to <a href="#exclude">&quot;exclude&quot;</a> or <a href="#include">&quot;include&quot;</a>. It returns a reference to the modified Query object.</p>
-
-<p>By excluding unneeded columns from the query result, it is possible to significantly reduce the time required for large queries.</p>
-
-<h2 id="include">include</h2>
-
-<p>This method limits the list of columns that will be returned for any subsequent calls to <a href="#fetch">&quot;fetch&quot;</a>.</p>
-
-<p>You may pass this method either a list of column names, or a string containing a comma delimited list of names. It will override any prior calls to <a href="#exclude">&quot;exclude&quot;</a> or <a href="#include">&quot;include&quot;</a>. It returns a reference to the modified Query object.</p>
-
-<p>By limiting the results to the needed columns, it is possible to significantly reduce the time required for large queries.</p>
-
-<p>For some reason the Direct Web Services API allows you to specify a list of columns to be excluded from the query result, but there is no similar capability to specify a list of columns to be included. This function implements the more obviously needed behavior by inverting the list. It uses the WSDL to generate a list of columns returned by <a href="#getRecords">&quot;getRecords&quot;</a>, and subtracts the specified names to create an <code>&quot;__exclude_columns&quot;</code> extended query parameter.</p>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    $query-&gt;include(@list_of_columns);
-    $query-&gt;include($comma_delimited_list_of_columns);
+<pre><code>    $query-&gt;exclude(@list_of_columns);
+    $query-&gt;exclude($comma_delimited_list_of_columns);
     </code></pre>
-
-<p><b>Example</b></p>
-
-<pre><code>    my $tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
-    my $qry = $tbl-&gt;query()-&gt;include(qw(
-        sys_id name sys_class_name 
-        operational_status sys_updated_on));
-    my @recs = $qry-&gt;fetchAll();    </code></pre>
 
 <h2 id="fetch">fetch</h2>
 
@@ -772,14 +772,15 @@
 
 <p><b>Syntax</b></p>
 
-<pre><code>    my @recs = $query-&gt;fetch();
-    my @recs = $query-&gt;fetch($numrecs);</code></pre>
+<pre><code>    @recs = $query-&gt;fetch();
+    @recs = $query-&gt;fetch($numrecs);</code></pre>
 
 <p><b>Example</b></p>
 
 <p>This example prints the names of all active users. Each call to <a href="#getRecords">&quot;getRecords&quot;</a> returns up to 100 users.</p>
 
-<pre><code>    my $query = $sn-&gt;table(&quot;sys_user&quot;)-&gt;query(active =&gt; &quot;true&quot;, __order_by =&gt; &quot;name&quot;);
+<pre><code>    my $sys_user = $sn-&gt;table(&quot;sys_user);
+    $sys_user-&gt;query(active =&gt; &quot;true&quot;, __order_by =&gt; &quot;name&quot;);
     while (@recs = $query-&gt;fetch(100)) {
         foreach my $rec (@recs) {
             print $rec-&gt;{name}, &quot;\n&quot;;
@@ -788,28 +789,23 @@
 
 <h2 id="fetchAll">fetchAll</h2>
 
-<p>Fetch all the records in a Query by calling <a href="#fetch">&quot;fetch&quot;</a> repeatedly until there are no more records. Returns a list of hashes. In a scalar context it returns a reference to an array of hashes.</p>
+<p>This method fetches all the records in a Query by calling <a href="#fetch">&quot;fetch&quot;</a> repeatedly until there are no more records. It takes an optional argument which is the number of records to be retrieved per fetch. It returns a list of hashes.</p>
 
 <p><b>Syntax</b></p>
 
-<pre><code>    my @recs = $query-&gt;fetchAll();
-    my @recs = $query-&gt;fetchAll($chunkSize);
+<pre><code>    @recs = $query-&gt;fetchAll();
+    @recs = $query-&gt;fetchAll($numrecs);
     </code></pre>
 
 <p><b>Example</b></p>
 
-<p>This example prints the names of all active users. Each call to <a href="#getRecords">&quot;getRecords&quot;</a> returns up to 250 users since no chunk size was specified and the default is 250.</p>
+<p>This example prints the names of all active users. Each call to <a href="#getRecords">&quot;getRecords&quot;</a> returns up to 250 records since no fetch size was specified and 250 is the default.</p>
 
-<pre><code>    my @recs = $sn-&gt;table(&quot;sys_user&quot;)-&gt;query(active =&gt; &quot;true&quot;, __order_by =&gt; &quot;name&quot;)-&gt;fetchAll();
+<pre><code>    my $sys_user = $sn-&gt;table(&quot;sys_user);
+    my @recs = $sys_user-&gt;query(active =&gt; &quot;true&quot;, __order_by =&gt; &quot;name&quot;)-&gt;fetchAll();
     foreach my $rec (@recs) {
          print $rec-&gt;{name}, &quot;\n&quot;;
     }</code></pre>
-
-<h2 id="setChunk">setChunk</h2>
-
-<p>This method sets the default chunk size (number of records per fetch) for subsequent calls to <a href="#fetch">&quot;fetch&quot;</a> or <a href="#fetchAll">&quot;fetchAll&quot;</a>.</p>
-
-<p>If <b>setChunk</b> is not specified then the default is 250 records per fetch.</p>
 
 <h2 id="getCount">getCount</h2>
 
@@ -821,21 +817,44 @@
 
 <p><b>Example</b></p>
 
-<p>The following example calls &lt;/getKeys&gt; to create a new query, and then makes of copy of the query using the same list of keys.</p>
+<p>The following example calls <a href="#getKeys">&quot;getKeys&quot;</a> to create a new query, and then makes of copy of the query using the same list of keys.</p>
 
 <pre><code>    my $query1 = $table-&gt;query($encoded_query);
     my $query2 = $table-&gt;asQuery($query1-&gt;getKeys());</code></pre>
 
+<h2 id="include">include</h2>
+
+<p>This method will affect any subsequent calls to <a href="#fetch">&quot;fetch&quot;</a> by limiting which columns are returned. By including only the needed columns in the query result, it is possible to significantly improve the performance of large queries.</p>
+
+<p>You may pass this method either a list of column names, or a string containing a comma delimited list of names. It will override any prior calls to <a href="#exclude">&quot;exclude&quot;</a> or <a href="#include">&quot;include&quot;</a>. It returns a reference to the modified Query object.</p>
+
+<p>For some reason the Direct Web Services API allows you to specify a list of columns to be excluded from the query result, but there is no similar out-of-box capability to specify only the columns to be included. This function implements the more obviously needed behavior by inverting the list. It uses the WSDL to generate a list of columns returned by <a href="#getRecords">&quot;getRecords&quot;</a>, and subtracts the specified names to create an <code>&quot;__exclude_columns&quot;</code> extended query parameter.</p>
+
+<p><b>Syntax</b></p>
+
+<pre><code>    $query-&gt;include(@list_of_columns);
+    $query-&gt;include($comma_delimited_list_of_columns);
+    </code></pre>
+
+<p><b>Example</b></p>
+
+<p>This example returns a list of all records in the <code>cmdb_ci_computer</code> table, but only 5 columns are returnd.</p>
+
+<pre><code>    my $tbl = $sn-&gt;table(&quot;cmdb_ci_computer&quot;);
+    my $qry = $tbl-&gt;query()-&gt;include(
+        qw(sys_id name sys_class_name operational_status sys_updated_on));
+    my @recs = $qry-&gt;fetchAll();    </code></pre>
+
 <h1 id="DIAGNOSTICS">DIAGNOSTICS</h1>
 
-<p>The fourth (optional) argument to the <a href="#ServiceNow">&quot;ServiceNow&quot;</a> function is an integer trace level which can be helpful for debugging. Sometimes, when you are developing a new script, it seems to hang at a certain point, and you just want to know what it is doing. Set the trace level to 1 to enable tracing messages for SOAP calls. Set the trace level to 2 to dump the complete XML of all SOAP results. Set the trace level to 0 (default) to disable this feature.</p>
+<p>The fourth (optional) argument to the <a href="#ServiceNow">&quot;ServiceNow&quot;</a> function is an integer trace level which can be helpful for debugging. Sometimes, when you are developing a new script, it seems to hang at a certain point, and you just want to know what it is doing. Set the trace level to 1 to print a single line for each Web Services call. Set the trace level to 2 to print the complete XML result for each call. Set the trace level to 0 (default) to disable this feature.</p>
 
 <p>You can also enable or disable tracing for a table by calling <code>setTrace</code> on the object.</p>
 
 <pre><code>    $table-&gt;setTrace(2);
     </code></pre>
 
-<p>If you want even more, then add the following to your code. This will cause SOAP:Lite to dump the HTTP headers and contens for all messages, both sent and received.</p>
+<p>If you want even more, then add the following to your code. This will cause SOAP:Lite to dump the HTTP headers and contents for all messages, both sent and received.</p>
 
 <pre><code>    SOAP::Lite-&gt;import(+trace =&gt; &#39;debug&#39;);</code></pre>
 
@@ -862,6 +881,20 @@
 <p>This license includes the non-exclusive, worldwide, free-of-charge patent license to make, have made, use, offer to sell, sell, import and otherwise transfer the Package with respect to any patent claims licensable by the Copyright Holder that are necessarily infringed by the Package. If you institute patent litigation (including a cross-claim or counterclaim) against any party alleging that the Package constitutes direct or contributory patent infringement, then this Artistic License to you shall terminate on the date that such litigation is filed.</p>
 
 <p>Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS &quot;AS IS&#39; AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES. THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
+
+<h1 id="POD-ERRORS">POD ERRORS</h1>
+
+<p>Hey! <b>The above document had some coding errors, which are explained below:</b></p>
+
+<dl>
+
+<dt id="Around-line-221">Around line 221:</dt>
+<dd>
+
+<p>&#39;=item&#39; outside of any &#39;=over&#39;</p>
+
+</dd>
+</dl>
 
 
 </body>
