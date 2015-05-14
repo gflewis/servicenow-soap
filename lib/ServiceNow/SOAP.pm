@@ -223,7 +223,7 @@ The list of available options is as follows:
 C<dv> - Specify a default value for Display Values.
 This can be overridden at the Table level.
 Default is 0.
-For details see L</setDV>.
+For an explanation of values see L</setDV>.
 
 =item *
 
@@ -232,8 +232,13 @@ by L</fetch>. Default is 250.
 
 =item *
 
+C<query> - Specify the number of keys to be retrieved by
+L</query> in each call to L</getKeys>.
+
+=item *
+
 C<trace> - Specify a trace level.
-Refer to L<DIAGNOSTICS> below.
+Refer to L</DIAGNOSTICS> below.
 Default is 0.
 
 =back
@@ -580,7 +585,7 @@ Each item in the list must be a B<sys_id> for the respective table.
 
 B<Syntax>
 
-    my $query = $table->asQuery(@keys);
+    $query = $table->asQuery(@keys);
 
 B<Example>
 
@@ -704,9 +709,9 @@ L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_D
 
 B<Syntax >
 
-    my $count = $table->count();
-    my $count = $table->count(%parameters);
-    my $count = $table->count($encodedquery);
+    $count = $table->count();
+    $count = $table->count(%parameters);
+    $count = $table->count($encodedquery);
 
 B<Examples>
 
@@ -771,8 +776,8 @@ L<extended query parameter|http://wiki.servicenow.com/index.php?title=Direct_Web
 
 B<Syntax>
 
-    my $names = $table->except(@list_of_columns);
-    my $names = $table->except($comma_separated_list_of_columns);
+    $names = $table->except(@list_of_columns);
+    $names = $table->except($comma_separated_list_of_columns);
     
 B<Example>
 
@@ -1152,12 +1157,29 @@ until all records have been retrieved.
 =cut
 
 sub query {
-    my $self = shift;
-    my $query = ServiceNow::SOAP::Query->new($self);
-    my @keys = $self->getKeys(@_);
+    my $table = shift;
+    my $session = $table->{session};
+    my $limit = $session->{query};
+    my $query = ServiceNow::SOAP::Query->new($table);
+    my %params = @_;
+    my @keys;
+    if ($limit) {
+        my $first = 0;
+        my $done = 0;
+        while ($first <= @keys) {
+            my %p = %params;
+            $p{__first_row} = $first;
+            $p{__limit} = $limit;
+            my @k = $table->getKeys(%p);
+            push @keys, @k;
+            $first += $limit;
+        }
+    }
+    else {
+        @keys = $table->getKeys(%params);
+    }
     # parameters which affect order or columns must be preserved
     # so that they can be passed to getRecords
-    my %params = @_;
     for my $k (keys %params) {
         delete $params{$k} unless $k =~ /^(__order|__exclude|__use_view)/;
     }
@@ -1607,29 +1629,27 @@ sub setIndex {
 
 =head1 DIAGNOSTICS
 
-The fourth (optional) argument to the L</ServiceNow> function 
-is an integer trace level which can be helpful for debugging.
 Sometimes, when you are developing a new script,
 it seems to hang at a certain point, 
 and you just want to know what it is doing.
-Set the trace level to 1 to print a single line for each Web Services call.
-Set the trace level to 2 to print the complete XML result for each call.
-Set the trace level to 0 (default) to disable this feature.
+You can enable tracing of Web Service calls
+by setting the C<trace> parameter
+in the L</ServiceNow> function as follows.
 
-You can also enable or disable tracing for a table by 
-calling C<setTrace> on the object.
+    my $sn = ServiceNow($instance, $username, $password, trace => 1);
 
-    $table->setTrace(2);
-    
+Set trace to 1 to print a single line for each Web Services call.
+Set trace to 2 to print the complete XML result for each call.
+
 If you want even more, then add the following to your code.
-This will cause SOAP:Lite to dump the HTTP headers
+This will cause SOAP::Lite to dump the HTTP headers
 and contents for all messages, both sent and received.
 
     SOAP::Lite->import(+trace => 'debug');
 
 =head1 AUTHOR
 
-Giles Lewis 
+Giles Lewis <gflewis@cpan.org>
 
 =head1 ACKNOWLEDGEMENTS
 
