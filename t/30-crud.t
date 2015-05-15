@@ -77,7 +77,7 @@ print "filter=$filter\n";
 
 my @recs = $incident->getRecords($filter);
 
-ok (@recs > 1, scalar(@recs) . " records created today ($today) retrieved");
+ok (@recs > 0, scalar(@recs) . " records created today ($today) retrieved");
 my $dcount = 0;
 foreach my $rec (@recs) {
     my $number = $rec->{number};

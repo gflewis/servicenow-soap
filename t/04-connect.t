@@ -11,7 +11,7 @@ my $user = TestUtil::config->{username};
 my $pass = TestUtil::config->{password};
 BAIL_OUT "not initialized" unless $instance;
 
-my $sn = ServiceNow($instance, $user, $pass, 1)->connect()
+my $sn = ServiceNow($instance, $user, $pass, trace => 1)->connect()
     or BAIL_OUT "Unable to connect";
 ok ($sn, "connection successful");
 my $sys_user = $sn->table("sys_user");

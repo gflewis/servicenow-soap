@@ -216,7 +216,7 @@ Various options can be specified as
 name value pairs following the password.
 The list of available options is as follows:
 
-=cut
+=over
 
 =item *
 
@@ -464,6 +464,7 @@ sub set {
             unless $key =~ /^(dv|fetch|query|timeout|trace)$/;
         $self->{$key} = $value;
     }
+    return $self;
 }    
 
 sub soap {
@@ -1176,14 +1177,15 @@ sub query {
     my @keys;
     if ($limit) {
         my $first = 0;
-        my $done = 0;
+        my $last = $limit;
         while ($first <= @keys) {
             my %p = %params;
             $p{__first_row} = $first;
-            $p{__limit} = $limit;
+            $p{__last_row} = $last;
             my @k = $table->getKeys(%p);
             push @keys, @k;
             $first += $limit;
+            $last = $first + $limit;
         }
     }
     else {
