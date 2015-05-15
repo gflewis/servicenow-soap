@@ -221,8 +221,8 @@ The following two statements are equivalent.
 
 Various options can be specified as name/value pairs following the password.
 
-    my $sn = ServiceNow("mycompanydev", $username, $password,
-        dv => "all", zip => 1, trace => 1);
+    my $sn = ServiceNow("mycompanydev", $username, $password, 
+        query => 10000, trace => 1);
         
 =head1 ServiceNow::SOAP::Session
 
@@ -230,11 +230,21 @@ Various options can be specified as name/value pairs following the password.
 
 package ServiceNow::SOAP::Session;
 
+sub set {
+    my $self = shift;
+    while (@_) {
+        my $key = shift;
+        my $value = shift;
+        croak '"fetch" must be greater than 0'
+            if $key eq "fetch" and $value < 1;
+        croak "option \"$key\" not recognized"
+            unless $key ~= /^(dv|fetch|query|timeout|trace)$/;
+        $self->{key} = $value;
+    }
+}    
+    
 sub new {
     my ($pkg, $url, $user, $pass, @options) = @_;
-    my %opt = @options;
-    my $trace = $opt{trace} || 0;
-    my $zip = $opt{zip} || 0;
     # strip off any trailing slash
     $url =~ s/\/$//; 
     # append '.service-now.com' unless the URL contains a '.'
@@ -244,22 +254,20 @@ sub new {
     my $endpoint = "$url/sys_user.do?SOAP";
     my $cookiejar = HTTP::Cookies->new(ignore_discard => 1);
     my @params = (cookie_jar => $cookiejar);
-    push @params, compress_threshold => $zip if $zip;
     print join(",", @params), "\n";
     my $client = SOAP::Lite->proxy($endpoint, @params);
     my $session = {
         url => $url,
         user => $user, 
         pass => $pass,
-        trace => $opt{trace} || 0,
-        dv => $opt{dv} || 0,
-        fetch => $opt{fetch} || 250,
-        query => $opt{query} || 10000,
-        trace => $trace,
-        zip => $zip,
+        trace => 0;
+        dv => 0;
+        fetch => 250,
+        query => 0,
         client => $client
     };
     bless $session, $pkg;
+    $pkg->set(@options);
     $context = $session;
     # This endpoint is a stub.  Endpoint will be changed before each call.
     my $timeout = $opt{timeout} || 0;
