@@ -53,12 +53,12 @@ ok ($rec1->{impact} == 3, "original impact is 3");
 # 
 # Attach a file
 #
-SKIP_FILE: {
+SKIP: {
     my $attachment = getProp('attachment');
     my $mimetype = getProp('attachment_type');
     skip "file attachment test skipped", 1 unless $attachment;
     
-    print "attachment name is $attachment\n";
+    diag "attachment name is $attachment\n";
     ok ($mimetype, "attachment type is $mimetype");
     $incident->attachFile($sysid, $attachment, $mimetype);
 }
@@ -73,7 +73,7 @@ ok ($rec2->{impact} == 1, "updated impact is 1");
 # Date filter test (look for records created today)
 #
 my $filter = "sys_created_on>=$today";
-print "filter=$filter\n";
+diag "filter=$filter\n";
 
 my @recs = $incident->getRecords($filter);
 
@@ -82,7 +82,7 @@ my $dcount = 0;
 foreach my $rec (@recs) {
     my $number = $rec->{number};
     my $created = $rec->{sys_created_on};
-    print "$number $created\n";
+    diag "$number $created\n";
     ++$dcount if substr($created, 0, 10) eq $today;
 }
 ok ($dcount eq @recs, "$dcount created today");
@@ -90,7 +90,7 @@ ok ($dcount eq @recs, "$dcount created today");
 # 
 # Delete the incident
 #
-SKIP_DEL: {
+SKIP: {
     skip "deleteRecord test skipped", 1 unless getProp('test_delete');
     $incident->deleteRecord(sys_id => $sysid);
     my $rec3 = $incident->get($sysid);

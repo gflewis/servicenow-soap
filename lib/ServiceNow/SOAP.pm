@@ -15,8 +15,6 @@ use Carp;
 
 our $VERSION = '0.10';
 
-$SOAP::Constants::DO_NOT_USE_LWP_LENGTH_HACK = 1;
-
 =head1 NAME
 
 ServiceNow::SOAP - A better Perl API for ServiceNow
@@ -128,7 +126,7 @@ Update a record.
     
 =head1 DESCRIPTION
 
-This module provides an alternate Perl API for ServiceNow.
+This module provides access to ServiceNow via SOAP Web Services.
 
 Features of this module include:
 
@@ -146,14 +144,14 @@ documentation.
 
 =item *
 
-Robust, easy to use methods for reading large amounts of data
+Robust methods for reading large amounts of data
 which adhere to ServiceNow's L<best practice recommendations|http://wiki.servicenow.com/index.php?title=Web_Services_Integrations_Best_Practices#Queries>.
 
 =back
 
 =cut
 
-our $xmlns = 'http://www.glidesoft.com/';
+our $XMLNS = 'http://www.glidesoft.com/';
 our $context; # global variable points to current session
 
 sub SOAP::Transport::HTTP::Client::get_basic_credentials {
@@ -203,7 +201,7 @@ This C<ServiceNow> function
 is used to obtain a reference to a Session object. 
 The Session object essentially holds the URL and
 connection credentials for your ServiceNow instance,
-and the SOAP::Lite object.
+and the L<SOAP::Lite> object.
 
 The first argument to this function is the instance,
 which can be either a fully qualified URL
@@ -214,34 +212,7 @@ The third argument is the password.
 
 Various options can be specified as
 name value pairs following the password.
-The list of available options is as follows:
-
-=over
-
-=item *
-
-C<dv> - Specify a default value for Display Values.
-This can be overridden at the Table level.
-Default is 0.
-For an explanation of values see L</setDV>.
-
-=item *
-
-C<fetch> - Specify default number of records to be retrieved
-by L</fetch>. Default is 250.
-
-=item *
-
-C<query> - Specify the number of keys to be retrieved by
-L</query> in each call to L</getKeys>.
-
-=item *
-
-C<trace> - Specify a trace level.
-Refer to L</DIAGNOSTICS> below.
-Default is 0.
-
-=back
+For a list of options refer to L</set>.
 
 B<Syntax>
 
@@ -267,6 +238,9 @@ package ServiceNow::SOAP::Session;
 
 sub new {
     my ($pkg, $url, $user, $pass, @options) = @_;
+    Carp::croak "Missing instance" unless $url;
+    Carp::carp "Username is blank" unless $user;
+    Carp::carp "Password is blank" unless $pass;
     # strip off any trailing slash
     $url =~ s/\/$//; 
     # append '.service-now.com' unless the URL contains a '.'
@@ -291,17 +265,9 @@ sub new {
     bless $session, $pkg;
     $session->set(@options);
     my $trace = $session->{trace};
-    my $timeout = $session->{timeout};
-    $context = $session;
-    $client->transport->timeout($timeout) if $timeout;
     print "url=$url; user=$user\n" if $trace;
+    $context = $session;
     return $session;
-}
-
-sub setTrace {
-    my ($self, $trace) = @_;
-    $self->{trace} = $trace;
-    return $self;
 }
 
 our $startTime;
@@ -447,9 +413,57 @@ sub saveSession {
     $cookie_jar->save($filename);
 }
 
-=head2 soap
+=head2 set
 
-This method returns a reference to the underlying SOAP::Lite object.
+This method permits assignment of various default values and processing options.
+This method is generally not required
+since the same options can be specified 
+following the password parameter of </ServiceNow>.
+
+The following options may be specified.
+
+=over
+
+=item *
+
+C<dv> - Specify a default value for Display Values.
+This can be overridden at the Table level by L</setDV>.
+For an explanation of values see L</setDV>.
+This option is only effective if it is changed
+prior to calling the L</table> method.
+
+=item *
+
+C<fetch> - Specify default number of records to be retrieved
+by L</fetch>. Default is 250.
+This option will be ignored if it is overridden
+by a parameter to L</fetch> or L</fetchAll>.
+
+=item *
+
+C<query> - Specify the number of keys to be retrieved by
+L</query> in each call to L</getKeys>.
+
+=item *
+
+C<timeout> - Specify a 
+SOAP::Transport::HTTP::Client timeout value.
+
+=item *
+
+C<trace> - Specify a trace level.
+Refer to L</DIAGNOSTICS> below.
+Default is 0.
+
+=back
+
+B<Syntax>
+
+    $sn->set(%options);
+    
+B<Example>
+
+    $sn->set(query => 100000, trace => 1);
 
 =cut
 
@@ -461,11 +475,26 @@ sub set {
         Carp::croak '"fetch" must be greater than 0'
             if $key eq "fetch" and $value < 1;
         Carp::croak "option \"$key\" not recognized"
-            unless $key =~ /^(dv|fetch|query|timeout|trace)$/;
+            unless $key =~ /^(dv|fetch|query|timeout|trace)$/;                       
         $self->{$key} = $value;
+        if ($key eq 'timeout' and $value > 0) {
+            $self->{client}->transport->timeout($value);
+        }        
     }
     return $self;
 }    
+
+sub setTrace {
+    my ($self, $trace) = @_;
+    $self->{trace} = $trace;
+    return $self;
+}
+
+=head2 soap
+
+This method returns a reference to the underlying SOAP::Lite object.
+
+=cut
 
 sub soap {
     my $self = shift;
@@ -563,7 +592,7 @@ sub callMethod {
         $endpoint = "$baseurl/$tablename.do?displayvalue=" . $dv . "&SOAP";
     }
     $context = $self->{session};
-    my $method = SOAP::Data->name($methodname)->attr({xmlns => $xmlns});
+    my $method = SOAP::Data->name($methodname)->attr({xmlns => $XMLNS});
     # my @params = ServiceNow::SOAP::_params(@_);
     my $som = $client->endpoint($endpoint)->call($method => @_);
     Carp::croak $som->faultdetail if $som->fault;        
@@ -992,8 +1021,8 @@ L<"insert" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOA
 
 B<Syntax>
 
-    my $sys_id = $table->insert(%values);
-    my %result = $table->insert(%values);
+    $sys_id = $table->insert(%values);
+    %result = $table->insert(%values);
     
 B<Examples>
 
@@ -1054,7 +1083,7 @@ L<"insertMultiple" Direct SOAP API method|http://wiki.servicenow.com/index.php?t
 
 B<Syntax>
 
-    my @results = $table->insertMultiple(@records);
+    @results = $table->insertMultiple(@records);
 
 B<Example>
 
@@ -1150,8 +1179,8 @@ by calling L</getKeys>.
 
 B<Syntax>
 
-    my $query = $table->query(%parameters);
-    my $query = $table->query($encodedquery);
+    $query = $table->query(%parameters);
+    $query = $table->query($encodedquery);
     
 B<Example>
 
@@ -1410,19 +1439,19 @@ In otherwords, all items which are one level downstream.
 First we query C<cmdb_rel_ci> to retrieve a list of 
 records for which this item is the parent.
 C<@relData> is this list of C<cmdb_rel_ci> records.
+If there are more than 250 records, C<fetchAll> will loop internally 
+until all records have been retrieved.
 
     my @relData = $cmdb_rel_ci->query(parent => $parentKey)->fetchAll();
 
 Next we extract the C<child> field from each of these C<cmdb_rel_ci>
-records to create a new list of sys_ids   
+records to create a new list of sys_ids.
 
     my @childKeys = map { $_->{child} } @relData;
 
 C<@childKeys> now contains a lists of sys_ids for configuration items.
 We convert this list of keys into a query object
 and fetch the records from the C<cmdb_ci> table.
-If there are more than 250 records, C<fetchAll> will loop internally 
-until all records have been retrieved.
     
     @childRecs = $cmdb_ci->asQuery(@childKeys)->fetchAll();
     foreach my $childRec (@childRecs) {
@@ -1473,7 +1502,7 @@ sub exclude {
 =head2 fetch
 
 Fetch the next chunk of records from a table.
-Returns a list of hashes.
+Returns a list of hash references.
 
 This method calls L</getRecords> to retrieve the records.
 An optional parameter allows specification of the number of records to be retrieved.
@@ -1526,8 +1555,8 @@ sub fetch {
 This method fetches all the records in a Query by calling L</fetch> repeatedly
 until there are no more records.
 It takes an optional argument which is the number of records 
-to be retrieved per fetch.
-It returns a list of hashes.
+to be retrieved B<per fetch>.
+It returns a list of hash references.
 
 B<Syntax>
 
@@ -1655,7 +1684,7 @@ Set trace to 1 to print a single line for each Web Services call.
 Set trace to 2 to print the complete XML result for each call.
 
 If you want even more, then add the following to your code.
-This will cause SOAP::Lite to dump the HTTP headers
+This will cause L<SOAP::Lite> to dump the HTTP headers
 and contents for all messages, both sent and received.
 
     SOAP::Lite->import(+trace => 'debug');
@@ -1666,7 +1695,7 @@ Giles Lewis <gflewis@cpan.org>
 
 =head1 ACKNOWLEDGEMENTS
 
-Greg George, author of ServiceNow::Simple,
+Greg George, author of L<ServiceNow::Simple>,
 from which a number of ideas were sourced. 
 
 =head1 LICENSE
