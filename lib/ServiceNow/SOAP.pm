@@ -15,6 +15,8 @@ use Carp;
 
 our $VERSION = '0.10';
 
+$SOAP::Constants::DO_NOT_USE_LWP_LENGTH_HACK = 1;
+
 =head1 NAME
 
 ServiceNow::SOAP - A better Perl API for ServiceNow
@@ -171,7 +173,7 @@ sub _params {
         my $value = shift;
         warn "Parameter name appears to be a sys_id"
             if $name =~ /^[0-9A-Fa-f]{32}$/;
-        push @params, SOAP::Data->name($name, $value);
+        push @params, SOAP::Data->name($name, $value)->type('string');
     }
     if (@_) {
         # there is one parameter left
@@ -207,6 +209,39 @@ The first argument to this function is the instance,
 which can be either a fully qualified URL
 (I<e.g.> C<"https://mycompanydev.service-now.com">)
 or an instance name (I<e.g.> C<"mycompanydev">).
+The second argument is the user name.
+The third argument is the password.
+
+Various options can be specified as
+name value pairs following the password.
+The list of available options is as follows:
+
+=cut
+
+=item *
+
+C<dv> - Specify a default value for Display Values.
+This can be overridden at the Table level.
+Default is 0.
+For an explanation of values see L</setDV>.
+
+=item *
+
+C<fetch> - Specify default number of records to be retrieved
+by L</fetch>. Default is 250.
+
+=item *
+
+C<query> - Specify the number of keys to be retrieved by
+L</query> in each call to L</getKeys>.
+
+=item *
+
+C<trace> - Specify a trace level.
+Refer to L</DIAGNOSTICS> below.
+Default is 0.
+
+=back
 
 B<Syntax>
 
@@ -230,19 +265,6 @@ Various options can be specified as name/value pairs following the password.
 
 package ServiceNow::SOAP::Session;
 
-sub set {
-    my $self = shift;
-    while (@_) {
-        my $key = shift;
-        my $value = shift;
-        croak '"fetch" must be greater than 0'
-            if $key eq "fetch" and $value < 1;
-        croak "option \"$key\" not recognized"
-            unless $key ~= /^(dv|fetch|query|timeout|trace)$/;
-        $self->{key} = $value;
-    }
-}    
-    
 sub new {
     my ($pkg, $url, $user, $pass, @options) = @_;
     # strip off any trailing slash
@@ -251,28 +273,27 @@ sub new {
     $url = $url . '.service-now.com' unless $url =~ /\./;
     # prefix with 'https://' unless the URL already starts with https:
     $url = 'https://' . $url unless $url =~ /^http[s]?:/;
+    # This endpoint is a stub.  Endpoint will be changed before each call.
     my $endpoint = "$url/sys_user.do?SOAP";
     my $cookiejar = HTTP::Cookies->new(ignore_discard => 1);
     my @params = (cookie_jar => $cookiejar);
-    print join(",", @params), "\n";
     my $client = SOAP::Lite->proxy($endpoint, @params);
     my $session = {
         url => $url,
         user => $user, 
         pass => $pass,
-        trace => 0;
-        dv => 0;
+        trace => 0,
+        dv => 0,
         fetch => 250,
         query => 0,
         client => $client
     };
     bless $session, $pkg;
-    $pkg->set(@options);
+    $session->set(@options);
+    my $trace = $session->{trace};
+    my $timeout = $session->{timeout};
     $context = $session;
-    # This endpoint is a stub.  Endpoint will be changed before each call.
-    my $timeout = $opt{timeout} || 0;
     $client->transport->timeout($timeout) if $timeout;
-    
     print "url=$url; user=$user\n" if $trace;
     return $session;
 }
@@ -432,6 +453,19 @@ This method returns a reference to the underlying SOAP::Lite object.
 
 =cut
 
+sub set {
+    my $self = shift;
+    while (@_) {
+        my $key = shift;
+        my $value = shift;
+        Carp::croak '"fetch" must be greater than 0'
+            if $key eq "fetch" and $value < 1;
+        Carp::croak "option \"$key\" not recognized"
+            unless $key =~ /^(dv|fetch|query|timeout|trace)$/;
+        $self->{$key} = $value;
+    }
+}    
+
 sub soap {
     my $self = shift;
     return $self->{client};
@@ -562,7 +596,7 @@ Each item in the list must be a B<sys_id> for the respective table.
 
 B<Syntax>
 
-    my $query = $table->asQuery(@keys);
+    $query = $table->asQuery(@keys);
 
 B<Example>
 
@@ -686,9 +720,9 @@ L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_D
 
 B<Syntax >
 
-    my $count = $table->count();
-    my $count = $table->count(%parameters);
-    my $count = $table->count($encodedquery);
+    $count = $table->count();
+    $count = $table->count(%parameters);
+    $count = $table->count($encodedquery);
 
 B<Examples>
 
@@ -753,8 +787,8 @@ L<extended query parameter|http://wiki.servicenow.com/index.php?title=Direct_Web
 
 B<Syntax>
 
-    my $names = $table->except(@list_of_columns);
-    my $names = $table->except($comma_separated_list_of_columns);
+    $names = $table->except(@list_of_columns);
+    $names = $table->except($comma_separated_list_of_columns);
     
 B<Example>
 
@@ -1134,12 +1168,29 @@ until all records have been retrieved.
 =cut
 
 sub query {
-    my $self = shift;
-    my $query = ServiceNow::SOAP::Query->new($self);
-    my @keys = $self->getKeys(@_);
+    my $table = shift;
+    my $session = $table->{session};
+    my $limit = $session->{query};
+    my $query = ServiceNow::SOAP::Query->new($table);
+    my %params = @_;
+    my @keys;
+    if ($limit) {
+        my $first = 0;
+        my $done = 0;
+        while ($first <= @keys) {
+            my %p = %params;
+            $p{__first_row} = $first;
+            $p{__limit} = $limit;
+            my @k = $table->getKeys(%p);
+            push @keys, @k;
+            $first += $limit;
+        }
+    }
+    else {
+        @keys = $table->getKeys(%params);
+    }
     # parameters which affect order or columns must be preserved
     # so that they can be passed to getRecords
-    my %params = @_;
     for my $k (keys %params) {
         delete $params{$k} unless $k =~ /^(__order|__exclude|__use_view)/;
     }
@@ -1589,29 +1640,27 @@ sub setIndex {
 
 =head1 DIAGNOSTICS
 
-The fourth (optional) argument to the L</ServiceNow> function 
-is an integer trace level which can be helpful for debugging.
 Sometimes, when you are developing a new script,
 it seems to hang at a certain point, 
 and you just want to know what it is doing.
-Set the trace level to 1 to print a single line for each Web Services call.
-Set the trace level to 2 to print the complete XML result for each call.
-Set the trace level to 0 (default) to disable this feature.
+You can enable tracing of Web Service calls
+by setting the C<trace> parameter
+in the L</ServiceNow> function as follows.
 
-You can also enable or disable tracing for a table by 
-calling C<setTrace> on the object.
+    my $sn = ServiceNow($instance, $username, $password, trace => 1);
 
-    $table->setTrace(2);
-    
+Set trace to 1 to print a single line for each Web Services call.
+Set trace to 2 to print the complete XML result for each call.
+
 If you want even more, then add the following to your code.
-This will cause SOAP:Lite to dump the HTTP headers
+This will cause SOAP::Lite to dump the HTTP headers
 and contents for all messages, both sent and received.
 
     SOAP::Lite->import(+trace => 'debug');
 
 =head1 AUTHOR
 
-Giles Lewis 
+Giles Lewis <gflewis@cpan.org>
 
 =head1 ACKNOWLEDGEMENTS
 
