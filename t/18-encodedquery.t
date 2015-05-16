@@ -9,12 +9,12 @@ if (TestUtil::config) { plan tests => 2 }
 else { plan skip_all => "no config" };
 
 my $today = today;
-print "today=$today\n";
+note "today=$today";
 
 my $sn = TestUtil::getSession();
 my $incident = $sn->table("incident");
 my $filter = TestUtil::config->{incident_filter};
-print "filter=$filter\n";
+note "filter=$filter";
 my @recs = $incident->getRecords($filter);
 my $count = @recs;
 

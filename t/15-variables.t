@@ -30,16 +30,16 @@ my $ritmRec = $sc_req_item->getRecord(number => $ritmNumber);
 my $sysid = $ritmRec->{sys_id};
 my @vars = $sc_req_item->getVariables($sysid);
 my $count = @vars;
-print $ritmNumber, "\n";
+note $ritmNumber;
 foreach my $var (sort { $a->{order} <=> $b->{order} } @vars) {
     my $order     = $var->{order};
     my $name      = $var->{name};
     my $reference = $var->{reference};
     my $question  = $var->{question};
     my $value     = $var->{value};
-    print "$order $name=$value";
-    print " [$reference]" if $reference;
-    print "\n";
+    my $note = "$order $name=$value";
+    $note .= " [$reference]" if $reference;
+    note $note;
 }
 
 ok (scalar(@vars) > $minimum, "$ritmNumber has $count variables");

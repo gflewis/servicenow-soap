@@ -47,7 +47,7 @@ ok ($count == 3, "$count records inserted");
 
 my $good = 0;
 foreach my $result (@results) {
-    print $result->{number}, " ", $result->{sys_id}, "\n";
+    note $result->{number}, " ", $result->{sys_id};
     $good++ if isGUID($result->{sys_id});
 }
 

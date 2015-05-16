@@ -4,7 +4,7 @@ use warnings;
 use Test::More tests => 2;
 use ServiceNow::SOAP;
 my $sn = ServiceNow("badcompany", "baduser", "badpassword")->connect();
-diag "connect returned: ", $@;
+note "connect returned: ", $@;
 ok (!$sn, 'connect trapped bad connection parameters');
 ok ($@, '$@ has an error message');
 

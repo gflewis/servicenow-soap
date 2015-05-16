@@ -58,7 +58,7 @@ SKIP: {
     my $mimetype = getProp('attachment_type');
     skip "file attachment test skipped", 1 unless $attachment;
     
-    diag "attachment name is $attachment\n";
+    note "attachment name is $attachment";
     ok ($mimetype, "attachment type is $mimetype");
     $incident->attachFile($sysid, $attachment, $mimetype);
 }
@@ -73,7 +73,7 @@ ok ($rec2->{impact} == 1, "updated impact is 1");
 # Date filter test (look for records created today)
 #
 my $filter = "sys_created_on>=$today";
-diag "filter=$filter\n";
+note "filter=$filter";
 
 my @recs = $incident->getRecords($filter);
 
@@ -82,7 +82,7 @@ my $dcount = 0;
 foreach my $rec (@recs) {
     my $number = $rec->{number};
     my $created = $rec->{sys_created_on};
-    diag "$number $created\n";
+    note "$number $created";
     ++$dcount if substr($created, 0, 10) eq $today;
 }
 ok ($dcount eq @recs, "$dcount created today");

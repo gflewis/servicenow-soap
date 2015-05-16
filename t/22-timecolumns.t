@@ -32,11 +32,10 @@ ok ($count2 == $count, "$count2 records retrieved (expected $count)");
 
 my $elapsed1 = $finish1 - $start1;
 my $elapsed2 = $finish2 - $start2;
-printf "query1 elapsed %.2f\n", $elapsed1;
-printf "query2 elapsed %.2f\n", $elapsed2;
+note sprintf("query1 elapsed %.2f", $elapsed1);
+note sprintf("query2 elapsed %.2f", $elapsed2);
 ok ($elapsed2 > $elapsed1, "first query was faster");
 
 done_testing();
-
 
 1;

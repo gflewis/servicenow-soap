@@ -19,7 +19,7 @@ ok ($count > 1000, "$count records in $tblname");
 
 my $size = 100000;
 $size = 100 * (int $count / 4 / 100) if ($size > $count);
-diag "size = $size";
+note "size = $size";
 $sn->set(query => $size);
 
 my $query = $tbl->query();

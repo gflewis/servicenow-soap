@@ -226,9 +226,10 @@ The following two statements are equivalent.
     my $sn = ServiceNow("mycompanydev", "soap.perl", $password);
 
 Various options can be specified as name/value pairs following the password.
+Refer to L</set> for details.
 
     my $sn = ServiceNow("mycompanydev", $username, $password, 
-        query => 10000, trace => 1);
+        query => 100000, trace => 1);
         
 =head1 ServiceNow::SOAP::Session
 
@@ -376,7 +377,7 @@ sub connect {
 
 =head2 loadSession
 
-This method loads the session information (i.e. cookies) from a file.
+This method loads the session information (I<i.e.> cookies) from a file.
 This may be required if you are running the same perl script multiple times
 (each time in a separate process)
 and you do not want to establish a separate ServiceNow session
@@ -398,7 +399,7 @@ sub loadSession {
 
 =head2 saveSession
 
-This method saves the session information (i.e. cookies) to a file.  
+This method saves the session information (I<i.e.> cookies) to a file.  
 For usage notes refer to L</loadSession> above.
 
 B<Syntax>
@@ -418,7 +419,7 @@ sub saveSession {
 This method permits assignment of various default values and processing options.
 This method is generally not required
 since the same options can be specified 
-following the password parameter of </ServiceNow>.
+following the password parameter of L</ServiceNow>.
 
 The following options may be specified.
 
@@ -443,6 +444,9 @@ by a parameter to L</fetch> or L</fetchAll>.
 
 C<query> - Specify the number of keys to be retrieved by
 L</query> in each call to L</getKeys>.
+The default is 0,
+which causes all key to be retrieved 
+in a single call.
 
 =item *
 
@@ -528,13 +532,11 @@ sub table {
 
 Table objects are used for ServiceNow's
 L<Direct Web Services API|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API>.
-A Table object holds the URI for a SOAP endpoint
-and the corresponding SOAP::Lite object.
 
 To obtain a Table object,
 use the L</table> method describe above.
 
-These Table object methods provide an interface to the Direct Web Services API:
+These Table object methods provide access to the Direct Web Services API:
 L</deleteRecord>,
 L</get>,
 L</getKeys>,
@@ -622,7 +624,7 @@ This method creates a new L<Query|/ServiceNow::SOAP::Query> object
 from a list of keys.
 It does not make any Web Services calls.
 It simply makes a copy of the list.
-Each item in the list must be a B<sys_id> for the respective table.
+Each item in the list must be a sys_id for the respective table.
 
 B<Syntax>
 
@@ -778,7 +780,7 @@ sub count {
 
 =head2 deleteRecord
 
-Deletes a record.
+This method deletes a record using the sys_id.
 For information on available parameters
 refer to the ServiceNow documentation on the 
 L<"deleteRecord" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#deleteRecord>.
@@ -807,7 +809,7 @@ This method returns a list of all columns in the table
 B<except> those in the argument list.
 The argument(s) to this method can be either a string 
 containing a comma separated list of names
-or a list of names (i.e. C<qw>).
+or a list of names (I<i.e.> C<qw>).
 This method returns a string containing a comma separated list of names.
 
 The [only useful] purpose of this function
@@ -825,7 +827,7 @@ B<Example>
 This example retrieves the columns sys_id, number and description
 from the incident table.
 In other words, 
-the result excludes all columns except sys_id, number and description.
+the result excludes all columns B<except> sys_id, number and description.
 
     my $incident = $sn->table("incident");
     my @recs = $incident->getRecords(
@@ -1012,7 +1014,7 @@ sub getRecords {
 =head2 insert
 
 This method inserts a record.
-In a scalar context, this method returns a B<sys_id> only.
+In a scalar context, this method returns a sys_id only.
 In a list context, this method returns a list of name/value pairs.
 
 For information on available parameters
@@ -1028,7 +1030,7 @@ B<Examples>
 
     my $incident = $sn->table("incident");
 
-In a scalar context, the function returns a B<sys_id>.
+In a scalar context, the function returns a sys_id.
 
     my $sys_id = $incident->insert(
         short_description => $short_description,
@@ -1166,7 +1168,7 @@ sub update {
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     my %values = @_;
     my $sysid = $values{sys_id};
-    $self->traceBefore("update $sysid");
+    $self->traceBefore("update");
     my $som = $self->callMethod('update', _params @_);
     $self->traceAfter();
     return $self;
@@ -1176,6 +1178,17 @@ sub update {
 
 This method creates a new L<Query|/ServiceNow::SOAP::Query> object
 by calling L</getKeys>.
+You can then use L</fetch> or L</fetchAll>
+to retrieve the actual record.
+
+This method normally fetches all keys using a single 
+call to L</getKeys>.
+However, if the number of keys is too large you may
+encounter timeout errors. In this situation the recommendation
+is to fetch the keys in chunks by specifying 
+a C<query> option in the L</ServiceNow> function.
+The suggested initial setting is C<query =E<gt> 100000>.
+If timeouts are still a problem the reduce the value further.
 
 B<Syntax>
 
@@ -1195,6 +1208,13 @@ until all records have been retrieved.
         __order_by => "sys_created_on");
     my @recs = $qry->fetchAll();
 
+The following example retrieves all keys for the C<cmdb_ci>
+table in chunks of 100,000 at a time.
+
+    my $sn = ServiceNow($instance, $user, $pass, query => 100000);
+    my $cmdb_ci = $sn->table("cmdb_ci");
+    my $qry = $cmdb_ci->query();
+
 =cut
 
 sub query {
@@ -1202,6 +1222,8 @@ sub query {
     my $session = $table->{session};
     my $limit = $session->{query};
     my $query = ServiceNow::SOAP::Query->new($table);
+    # if there is a single parameter it must be an encoded query
+    if (@_ == 1) { unshift @_, '__encoded_query' };
     my %params = @_;
     my @keys;
     if ($limit) {

@@ -11,7 +11,7 @@ use TestUtil;
 my $locationName;
 if (TestUtil::config) {
     $locationName = getProp("location_name");
-    # print "location=$locationName\n";
+    note "location=$locationName";
     if ($locationName) {
         plan tests => 1;
     }
@@ -33,7 +33,7 @@ my @recs = $computer->query(
     __order_by => "name")->fetchAll();
 my $count = scalar(@recs);
 foreach my $rec (@recs) {
-    # print $rec->{name}, "\n";
+    note $rec->{name};
 }
 ok (scalar(@recs) > $minimum, "$locationName has $count computers");
 
