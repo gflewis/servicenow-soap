@@ -13,7 +13,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 =head1 NAME
 
@@ -261,7 +261,8 @@ sub new {
         dv => 0,
         fetch => 250,
         query => 0,
-        client => $client
+        client => $client,
+        private => {}
     };
     bless $session, $pkg;
     $session->set(@options);
@@ -269,6 +270,21 @@ sub new {
     print "url=$url; user=$user\n" if $trace;
     $context = $session;
     return $session;
+}
+
+#
+# private method to return a private table for use by this module
+#
+sub private {
+    my ($session, $tablename) = @_;
+    my $table = $session->{private}{$tablename};
+    if (!$table) {
+        $table = $session->table($tablename);
+        $session->{private}{$tablename} = $table;
+    }
+    # make sure DV is always false for private tables
+    $table->setDV(0);
+    return $table;
 }
 
 our $startTime;
@@ -589,7 +605,7 @@ sub callMethod {
     my $client = $session->{client};
     my $baseurl = $session->{url};
     my $endpoint = "$baseurl/$tablename.do?SOAP";
-    if (($methodname eq 'get' || $methodname eq 'getRecords') && $self->{dv}) {
+    if ($methodname =~ /^(get|getRecords|aggregate)$/ && $self->{dv}) {
         my $dv = $self->{dv};
         $endpoint = "$baseurl/$tablename.do?displayvalue=" . $dv . "&SOAP";
     }
@@ -696,14 +712,14 @@ B<Example>
 
 sub attachFile {
     my $self = shift;
+    my $session = $self->{session};
+    my $tablename = $self->{name};
     my ($sysid, $filename, $mimetype, $attachname) = @_;
     Carp::croak "attachFile: No such record" unless $self->get($sysid);
     $mimetype = "text/plain" unless $mimetype;
     $attachname = $filename unless $attachname;
     Carp::croak "Unable to read file \"$filename\"" unless -r $filename;
-    my $session = $self->{session};
-    my $ecc_queue = $self->{ecc_queue} ||
-        ($self->{ecc_queue} = $session->table('ecc_queue'));
+    my $ecc_queue = $session->private('ecc_queue');
     open my $fh, '<', $filename 
         or die "Unable to open \"$filename\"\n$!";
     my ($buf, $base64);
@@ -712,14 +728,13 @@ sub attachFile {
         $base64 .= MIME::Base64::encode_base64($buf);
     }
     close $fh;
-    my $tablename = $self->{name};
-    my $sysid = $ecc_queue->insert(
+    my $ecc_id = $ecc_queue->insert(
         topic => 'AttachmentCreator',
         name => "$attachname:$mimetype",
         source => "$tablename:$sysid",
         payload => $base64
     );
-    die "attachFile failed" unless $sysid;
+    die "attachFile failed" unless $ecc_id;
 }
 
 =head2 columns
@@ -773,9 +788,32 @@ sub count {
     my @params = (COUNT => 'sys_id', @_);
     $self->traceBefore('aggregate count');
     my $som = $self->callMethod('aggregate' => _params @params);
-    my $count = $som->body->{aggregateResponse}->{aggregateResult}->{COUNT};
+    my $count = $som->body->{aggregateResponse}{aggregateResult}{COUNT};
     $self->traceAfter("count=$count");
     return $count;
+}
+
+=head2 countBy
+
+=cut
+
+sub countBy {
+    my $self = shift;
+    my $groupby = shift;
+    Carp::croak "countBy missing groupby field" unless $groupby;
+    my @params = (COUNT => 'sys_id', GROUP_BY => $groupby, @_);
+    $self->traceBefore('aggregate count');
+    my $som = $self->callMethod('aggregate' => _params @params);
+    my @aggResults = @{$som->body->{aggregateResponse}{aggregateResult}};
+    my $rows = @aggResults;
+    $self->traceAfter("rows=$rows");
+    my %results;
+    foreach my $agg (@aggResults) {
+        my $key = $agg->{$groupby};
+        my $count = $agg->{COUNT};
+        $results{$key} = $count;
+    }
+    return %results;
 }
 
 =head2 deleteRecord
@@ -1011,6 +1049,98 @@ sub getRecords {
     return @records;
 }
 
+=head getName
+
+This method returns the name of this table from L</table>.
+
+=cut
+
+sub getName {
+    return shift->{name};
+}
+
+=head2 getVariables
+
+This method returns a list of hashes 
+of the variables attached to a Requested Item (RITM).
+
+B<Note>: This function currently works only for the C<sc_req_item> table.
+
+Each hash contains the following four fields:
+
+=over
+
+=item *
+
+name - Name of the variable.
+
+=item *
+
+question - The question text.
+
+=item *
+
+reference - If the variable is a reference, then the name of the table.
+Otherwise blank.
+
+=item *
+
+value - Value of the question response.
+If the variable is a reference, then value will contain a sys_id.
+
+=item *
+
+order - Order (useful for sorting).
+
+=back
+
+B<Syntax>
+
+    $sc_req_item = $sn->table("sc_req_item");
+    @vars = $sc_req_item->getVariables($sys_id);
+    
+B<Example>
+
+    my $sc_req_item = $sn->table("sc_req_item");
+    my $ritmRec = $sc_req_item->getRecord(number => $ritm_number);
+    my @vars = $sc_req_item->getVariables($ritmRec->{sys_id});
+    foreach my $var (sort { $a->{order} <=> $b->{order} } @vars) {
+        print "$var->{name} = $var->{value}\n";
+    }
+
+=cut
+
+sub getVariables {
+    my $self = shift;
+    Carp::croak "getVariables: invalid table" unless $self->{name} eq 'sc_req_item';
+    my $sysid = shift;
+    Carp::croak "getVariables: invalid sys_id: $sysid" unless _isGUID($sysid);
+    my $session = $self->{session};
+    my $sc_item_option      = $session->private('sc_item_option');
+    my $sc_item_option_mtom = $session->private('sc_item_option_mtom');
+    my $item_option_new     = $session->private('item_option_new');
+    my @vmtom = $sc_item_option_mtom->getRecords('request_item', $sysid);
+    my $vrefkeys = join ',', map { $_->{sc_item_option} } @vmtom;
+    my @vref = $sc_item_option->getRecords('sys_idIN' . $vrefkeys);
+    my $vvalkeys = join ',', map { $_->{item_option_new} } @vref;
+    my @vval = $item_option_new->getRecords('sys_idIN' . $vvalkeys);
+    my %vvalhash = map { $_->{sys_id} => $_ } @vval;
+    my @result;
+    foreach my $v (@vref) {
+        next unless _isGUID($v->{item_option_new});
+        my $n = $vvalhash{$v->{item_option_new}};
+        my $var = {
+            name      => $n->{name},
+            reference => $n->{reference},
+            question  => $n->{question_text},
+            value     => $v->{value},
+            order     => $n->{order}
+        };
+        push @result, $var;
+    }
+    return @result;
+}
+
 =head2 insert
 
 This method inserts a record.
@@ -1123,57 +1253,6 @@ sub insertMultiple {
     return @status;
 }
 
-=head2 update
-
-This method updates a record.
-For information on available parameters
-refer to the ServiceNow documentation on the 
-L<"update" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#update>.
-
-B<Syntax>
-
-    $table->update(%parameters);
-    $table->update($sys_id, %parameters);
-
-Note: If the first syntax is used, 
-then the C<sys_id> must be included among the parameters.
-If the second syntax is used, then the C<sys_id>
-must be the first parameter.
-
-For reference fields (e.g. assignment_group, assigned_to)
-you may pass in either a sys_id or a display value.
-
-B<Examples>
-
-The following three examples are equivalent.
-
-    $incident->update(
-        sys_id => $sys_id, 
-        assigned_to => "5137153cc611227c000bbd1bd8cd2005",
-        incient_state => 2);
-        
-    $incident->update(
-        sys_id => $sys_id, 
-        assigned_to => "Fred Luddy", 
-        incident_state => 2);
-    
-    $incident->update($sys_id, 
-        assigned_to => "Fred Luddy", 
-        incident_state => 2);
-
-=cut
-
-sub update {
-    my $self = shift;
-    if (_isGUID($_[0])) { unshift @_, 'sys_id' };
-    my %values = @_;
-    my $sysid = $values{sys_id};
-    $self->traceBefore("update");
-    my $som = $self->callMethod('update', _params @_);
-    $self->traceAfter();
-    return $self;
-}
-
 =head2 query
 
 This method creates a new L<Query|/ServiceNow::SOAP::Query> object
@@ -1254,91 +1333,6 @@ sub query {
     return $query;
 }
 
-=head2 getVariables
-
-This method returns a list of hashes 
-of the variables attached to a Requested Item (RITM).
-
-B<Note>: This function currently works only for the C<sc_req_item> table.
-
-Each hash contains the following four fields:
-
-=over
-
-=item *
-
-name - Name of the variable.
-
-=item *
-
-question - The question text.
-
-=item *
-
-reference - If the variable is a reference, then the name of the table.
-Otherwise blank.
-
-=item *
-
-value - Value of the question response.
-If the variable is a reference, then value will contain a sys_id.
-
-=item *
-
-order - Order (useful for sorting).
-
-=back
-
-B<Syntax>
-
-    $sc_req_item = $sn->table("sc_req_item");
-    @vars = $sc_req_item->getVariables($sys_id);
-    
-B<Example>
-
-    my $sc_req_item = $sn->table("sc_req_item");
-    my $ritmRec = $sc_req_item->getRecord(number => $ritm_number);
-    my @vars = $sc_req_item->getVariables($ritmRec->{sys_id});
-    foreach my $var (sort { $a->{order} <=> $b->{order} } @vars) {
-        print "$var->{name} = $var->{value}\n";
-    }
-
-=cut
-
-sub getVariables {
-    my $self = shift;
-    Carp::croak "getVariables: invalid table" unless $self->{name} eq 'sc_req_item';
-    my $sysid = shift;
-    Carp::croak "getVariables: invalid sys_id: $sysid" unless _isGUID($sysid);
-    my $session = $self->{session};
-    my $sc_item_option = $self->{sc_item_option} ||
-        ($self->{sc_item_option} = $session->table('sc_item_option'));
-    my $sc_item_option_mtom = $self->{sc_item_option_mtom} ||
-        ($self->{sc_item_option_mtom} = $session->table('sc_item_option_mtom'));
-    my $item_option_new = $self->{item_option_new} ||
-        ($self->{item_option_new} = $session->table('item_option_new'));
-    my @vmtom = $sc_item_option_mtom->getRecords('request_item', $sysid);
-    my $vrefkeys = join ',', map { $_->{sc_item_option} } @vmtom;
-    my @vref = $sc_item_option->getRecords('sys_idIN' . $vrefkeys);
-    my $vvalkeys = join ',', map { $_->{item_option_new} } @vref;
-    my @vval = $item_option_new->getRecords('sys_idIN' . $vvalkeys);
-    my %vvalhash = map { $_->{sys_id} => $_ } @vval;
-    my @result;
-    foreach my $v (@vref) {
-        next unless _isGUID($v->{item_option_new});
-        my $n = $vvalhash{$v->{item_option_new}};
-        my $var = {
-            name      => $n->{name},
-            reference => $n->{reference},
-            question  => $n->{question_text},
-            value     => $v->{value},
-            order     => $n->{order}
-        };
-        push @result, $var;
-    }
-    return @result;
-}
-
 =head2 setDV
 
 Used to enable (or disable) display values in queries.
@@ -1372,11 +1366,15 @@ B<Examples>
 
 sub setDV {
     my ($self, $dv) = @_;
-    $dv = ''     if $dv eq '0';
-    $dv = 'true' if $dv eq '1';
-    $dv = 'all'  if $dv eq '2';
+    if ($dv eq '0') { $dv = '' }
+    elsif ($dv eq '1') { $dv = 'true' }
+    elsif ($dv eq '2') { $dv = 'all' };
     $self->{dv} = $dv;
     return $self;
+}
+
+sub getSession {
+    return $_[0]->{session};
 }
 
 sub setTrace {
@@ -1417,6 +1415,57 @@ sub getFields {
 }
 
     
+=head2 update
+
+This method updates a record.
+For information on available parameters
+refer to the ServiceNow documentation on the 
+L<"update" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#update>.
+
+B<Syntax>
+
+    $table->update(%parameters);
+    $table->update($sys_id, %parameters);
+
+Note: If the first syntax is used, 
+then the C<sys_id> must be included among the parameters.
+If the second syntax is used, then the C<sys_id>
+must be the first parameter.
+
+For reference fields (e.g. assignment_group, assigned_to)
+you may pass in either a sys_id or a display value.
+
+B<Examples>
+
+The following three examples are equivalent.
+
+    $incident->update(
+        sys_id => $sys_id, 
+        assigned_to => "5137153cc611227c000bbd1bd8cd2005",
+        incient_state => 2);
+        
+    $incident->update(
+        sys_id => $sys_id, 
+        assigned_to => "Fred Luddy", 
+        incident_state => 2);
+    
+    $incident->update($sys_id, 
+        assigned_to => "Fred Luddy", 
+        incident_state => 2);
+
+=cut
+
+sub update {
+    my $self = shift;
+    if (_isGUID($_[0])) { unshift @_, 'sys_id' };
+    my %values = @_;
+    my $sysid = $values{sys_id};
+    $self->traceBefore("update");
+    my $som = $self->callMethod('update', _params @_);
+    $self->traceAfter();
+    return $self;
+}
+
 package ServiceNow::SOAP::Query;
 
 =head1 ServiceNow::SOAP::Query
