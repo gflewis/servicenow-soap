@@ -768,8 +768,8 @@ L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_D
 B<Syntax >
 
     $count = $table->count();
+    $count = $table->count($encodedQuery);
     $count = $table->count(%parameters);
-    $count = $table->count($encodedquery);
 
 B<Examples>
 
@@ -795,13 +795,23 @@ sub count {
 
 =head2 countBy
 
+B<Syntax>
+
+    %results = $table->countBy($groupByColumn);
+    %results = $table->countBy($groupByColumn, $encodedQuery);
+    %results = $table->countBy(%groupByColumn, %parameters);
+
+B<Example>
+
+    my %counts = $sn->table("incident")->countBy("category");
+
 =cut
 
 sub countBy {
     my $self = shift;
     my $groupby = shift;
     Carp::croak "countBy missing groupby field" unless $groupby;
-    my @params = (COUNT => 'sys_id', GROUP_BY => $groupby, @_);
+    my @params = (COUNT => 'sys_id', GROUP_BY => $groupBy, @_);
     $self->traceBefore('aggregate count');
     my $som = $self->callMethod('aggregate' => _params @params);
     my @aggResults = @{$som->body->{aggregateResponse}{aggregateResult}};
