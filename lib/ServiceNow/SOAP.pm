@@ -1181,7 +1181,7 @@ sub getRecords {
     return @records;
 }
 
-=head getName
+=head2 getName
 
 This method returns the name of this table from L</table>.
 
