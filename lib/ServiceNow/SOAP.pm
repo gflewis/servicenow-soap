@@ -461,7 +461,7 @@ by a parameter to L</fetch> or L</fetchAll>.
 C<query> - Specify the number of keys to be retrieved by
 L</query> in each call to L</getKeys>.
 The default is 0,
-which causes all key to be retrieved 
+which causes all keys to be retrieved 
 in a single call.
 
 =item *
