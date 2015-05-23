@@ -1806,7 +1806,7 @@ Set trace to 2 to print the complete XML result for each call.
 
 If you want even more, then add the following to your code.
 This will cause L<SOAP::Lite> to dump the HTTP headers
-and contents for all messages, both sent and received.
+and content for all messages, both sent and received.
 
     SOAP::Lite->import(+trace => 'debug');
 
