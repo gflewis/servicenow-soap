@@ -1378,13 +1378,25 @@ B<Syntax>
 
 B<Examples>
 
+C<setDV("true")> causes display values to be returned
+for all fields instead of original values.
+
     my $sys_user_group = $sn->table("sys_user_group")->setDV("true");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
     print "manager=", $grp->{manager}, "\n";
 
+C<setDV("all")> causes display values to be returned
+in addition to original values. 
+Display value fields have a "dv_" prefix.
+
     my $sys_user_group = $sn->table("sys_user_group")->setDV("all");
     my $grp = $sys_user_group->getRecord(name => "Network Support");
     print "manager=", $grp->{dv_manager}, "\n";
+
+Note that L</setDV> is a Table method, B<not> a Query method.
+
+    @recs = $table->setDV(1)->query()->fetchAll(); # Correct
+    @recs = $table->query()->setDV(1)->fetchAll(); # INCORRECT!
     
 =cut
 
