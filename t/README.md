@@ -10,9 +10,9 @@ or you can request a personal developer instance
 at https://developer.servicenow.com
 
 To run the full test suite you must copy the file
-test.sample.conf 
+`test.sample.conf` 
 to either
-test.config or .test.config
+`test.config` or `.test.config`
 and then modify the file.
 
 Most test scripts will be skipped if the
