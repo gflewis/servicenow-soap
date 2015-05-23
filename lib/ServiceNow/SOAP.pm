@@ -512,7 +512,8 @@ sub setTrace {
 
 =head2 soap
 
-This method returns a reference to the underlying SOAP::Lite object.
+This method returns a reference to the underlying 
+L<SOAP::Lite> object.
 
 =cut
 
