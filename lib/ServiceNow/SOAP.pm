@@ -8,6 +8,7 @@ our @EXPORT = qw(ServiceNow);
 use SOAP::Lite;
 use LWP::UserAgent;
 use HTTP::Cookies;
+use File::Basename;
 use MIME::Base64;
 use XML::Simple;
 use Time::HiRes;
@@ -433,9 +434,8 @@ sub saveSession {
 =head2 set
 
 This method permits assignment of various default values and processing options.
-This method is generally not required
-since the same options can be specified 
-following the password parameter of L</ServiceNow>.
+The same options can also be specified
+following the password argument of L</ServiceNow>.
 
 The following options may be specified.
 
@@ -553,7 +553,7 @@ L<Direct Web Services API|http://wiki.servicenow.com/index.php?title=SOAP_Direct
 To obtain a Table object,
 use the L</table> method describe above.
 
-These Table object methods provide access to the Direct Web Services API:
+The following Table object methods provide access to Direct Web Services API methods of the same name:
 L</deleteRecord>,
 L</get>,
 L</getKeys>,
@@ -635,6 +635,42 @@ sub traceAfter {
     $session->traceAfter($trace, $message, $content);
 }
 
+=head2 addComment
+
+This method adds a comment to a task.
+
+See also: L</getComments>, L</getJournalEntries>
+
+B<Syntax>
+
+    $table->addComment($sys_id, $comment);
+    
+=cut
+
+sub addComment {
+    my ($self, $sysid, $comment) = @_;
+    $self->update($sysid, 'comments' => $comment);
+    return $self;
+}
+
+=head2 addWorkNote
+
+This method adds a work note to a task.
+
+See also: L</getWorkNotes>, L</getJournalEntries>
+
+B<Syntax>
+
+    $table->addWorkNote($sys_id, $work_note);
+    
+=cut
+
+sub addWorkNote {
+    my ($self, $sysid, $note) = @_;
+    $self->update($sysid, 'work_notes' => $note);
+    return $self;
+}
+
 =head2 asQuery
 
 This method creates a new L<Query|/ServiceNow::SOAP::Query> object
@@ -686,28 +722,29 @@ This method implements the
 L<attachment creator API|http://wiki.servicenow.com/index.php?title=AttachmentCreator_SOAP_Web_Service>.
 The method requires C<soap_ecc> role.
 
-You will need to specify a MIME type.
-If no type is specified,
-this function will use a default type of "text/plain".
-For a list of MIME types, refer to
-L<http://en.wikipedia.org/wiki/Internet_media_type>.
-
 When you attach a file to a ServiceNow record,
-you can also specify an attachment name
+you can optionally specify an attachment name
 which is different from the actual file name.
 If no attachment name is specified,
 this function will
-assume that the attachment name is the same as the file name.
+assume that the attachment name is the 
+the file name stripped of any directory.
+
+You can also optionally specify a MIME type.
+If no type is specified,
+the function will use L<MIME::Types>
+to infer the type.
 
 This function will die if the file cannot be read.
 
 B<Syntax>
 
-    $table->attachFile($sys_id, $filename, $mime_type, $attachment_name);
+    $table->attachFile($sys_id, $filepath);
+    $table->attachFile($sys_id, $filepath, $attachment_name, $mime_type);
 
 B<Example>
 
-    $incident->attachFile($sys_id, "screenshot.png", "image/png");
+    $incident_tbl->attachFile($sys_id, "screenshot.png");
     
 =cut
 
@@ -715,20 +752,31 @@ sub attachFile {
     my $self = shift;
     my $session = $self->{session};
     my $tablename = $self->{name};
-    my ($sysid, $filename, $mimetype, $attachname) = @_;
+    my ($sysid, $filepath, $attachname, $mimetype) = @_;
     Carp::croak "attachFile: No such record" unless $self->get($sysid);
-    $mimetype = "text/plain" unless $mimetype;
-    $attachname = $filename unless $attachname;
-    Carp::croak "Unable to read file \"$filename\"" unless -r $filename;
+    my ($parsename, $parsepath, $suffix ) = 
+        File::Basename::fileparse($filepath, "\.[^.]*");
+    if (!$attachname) {
+        $attachname = $parsename . $suffix;
+    }
+    if (!$mimetype) {
+        require MIME::Types;
+        my $typer = MIME::Types->new;
+        $mimetype = $typer->mimeTypeOf($suffix);
+    }
+    Carp::croak "Unable to read file \"$filepath\"" unless -r $filepath;
     my $ecc_queue = $session->private('ecc_queue');
-    open my $fh, '<', $filename 
-        or die "Unable to open \"$filename\"\n$!";
+    open my $fh, '<', $filepath 
+        or die "Unable to open \"$filepath\"\n$!";
+    binmode $fh;
     my ($buf, $base64);
     # encode in multiples of 57 bytes to ensure no padding in the middle
     while (read $fh, $buf, 60*57) {
         $base64 .= MIME::Base64::encode_base64($buf);
     }
     close $fh;
+    my $len = length($base64);
+    print "attachment name=$attachname:$mimetype len=$len\n";
     my $ecc_id = $ecc_queue->insert(
         topic => 'AttachmentCreator',
         name => "$attachname:$mimetype",
@@ -898,11 +946,11 @@ from the incident table.
 In other words, 
 the result excludes all columns B<except> sys_id, number and description.
 
-    my $incident = $sn->table("incident");
-    my @recs = $incident->getRecords(
+    my $incident_tbl = $sn->table("incident");
+    my @recs = $incident_tbl->getRecords(
         __encoded_query => "sys_created_on>=$datetime",
         __exclude_columns => 
-            $incident->except("sys_id,number,description"),
+            $incident_tbl->except("sys_id,number,description"),
         __limit => 250);
  
 =cut
@@ -938,13 +986,66 @@ B<Example>
 sub get {
     my $self = shift;
     my $tablename = $self->{name};
-    # Carp::croak("get $tablename: no parameter") unless @_; 
+    Carp::croak("get $tablename: missing argument") unless @_; 
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     $self->traceBefore('get');
     my $som = $self->callMethod('get' =>  _params @_);
     $self->traceAfter();
     my $result = $som->body->{getResponse};
     return $result;
+}
+
+=head2 getComments
+
+This method retrieves all comments for a task.
+It returns an array of records, each of which contains a C<value> field.
+
+See also: L</addComment>, L</getJournalEntries>
+
+B<Example>
+
+    my @comments = $incident_tbl->getComments($sys_id);
+    foreach my $comment (@comments) {
+        print $comment->{value}, "\n";
+    }
+    
+=cut
+
+sub getComments {
+    my ($self, $sysid) = @_;
+    return $self->getJournalEntries($sysid, 'comments');
+}
+
+=head2 getJournalEntries
+
+This method retrieves journal fields
+(I<i.e.> Work Notes, Comments) for a ticket.
+
+See also: L</getComments>, L</getWorkNotes>
+
+B<Syntax>
+
+    @notes = $table->getJournalEntries($sys_id, $fieldname);
+    
+B<Example>
+
+    my @notes = $incident_tbl->getJournalEntries($sys_id, 'work_notes');
+    foreach my $note (@notes) {
+        print $note->{value}, "\n";
+    }
+    
+=cut
+
+sub getJournalEntries {
+    my ($self, $sysid, $fieldname) = @_;
+    my $session = $self->{session};
+    my $sys_journal_field = $session->private('sys_journal_field');
+    $fieldname = 'work_notes' unless $fieldname;
+    my @params = (element_id => $sysid);
+    push @params, 'element' => $fieldname if $fieldname;
+    push @params, '__limit' => 1000;
+    my @recs = $sys_journal_field->getRecords(@params);
+    return @recs;
 }
 
 =head2 getKeys
@@ -1096,6 +1197,10 @@ This method returns a list of hashes
 of the variables attached to a Requested Item (RITM).
 
 B<Note>: This function currently works only for the C<sc_req_item> table.
+This function requires read access to the three tables 
+C<item_option_new>,
+C<sc_item_option> and
+C<sc_item_option_mtom>.
 
 Each hash contains the following four fields:
 
@@ -1136,7 +1241,9 @@ B<Example>
     my $ritmRec = $sc_req_item->getRecord(number => $ritm_number);
     my @vars = $sc_req_item->getVariables($ritmRec->{sys_id});
     foreach my $var (sort { $a->{order} <=> $b->{order} } @vars) {
-        print "$var->{name} = $var->{value}\n";
+        my $name = $var->{name};
+        my $value = $var->{value};
+        print "$name = $value\n";
     }
 
 =cut
@@ -1172,6 +1279,27 @@ sub getVariables {
     return @result;
 }
 
+=head2 getWorkNotes
+
+This method retrieves all work notes for a task.
+It returns an array of records, each of which contains a C<value> field.
+
+See also: L</addWorkNote>, L</getJournalEntries>
+
+B<Example>
+
+    my @notes = $incident_tbl->getWorkNotes($sys_id);
+    foreach my $note (@notes) {
+        print $note->{value}, "\n";
+    }
+    
+=cut
+
+sub getWorkNotes {
+    my ($self, $sysid) = @_;
+    return $self->getJournalEntries($sysid, 'work_notes');
+}
+
 =head2 insert
 
 This method inserts a record.
@@ -1189,11 +1317,11 @@ B<Syntax>
     
 B<Examples>
 
-    my $incident = $sn->table("incident");
+    my $incident_tbl = $sn->table("incident");
 
 In a scalar context, the function returns a sys_id.
 
-    my $sys_id = $incident->insert(
+    my $sys_id = $incident_tbl->insert(
         short_description => $short_description,
         assignment_group => "Network Support",
         impact => 3);
@@ -1201,7 +1329,7 @@ In a scalar context, the function returns a sys_id.
 
 In a list context, the function returns a list of name/value pairs.
 
-    my %result = $incident->insert(
+    my %result = $incident_tbl->insert(
         short_description => $short_description,
         assignment_group => "Network Support",
         impact => 3);
@@ -1214,7 +1342,7 @@ You can also call it this way:
     $rec{short_description} = $short_description;
     $rec{assignment_group} = "Network Support";
     $rec{impact} = 3;
-    my $sys_id = $incident->insert(%rec);
+    my $sys_id = $incident_tbl->insert(%rec);
 
 Note that for reference fields (e.g. assignment_group, assigned_to)
 you may pass in either a sys_id or a display value.
@@ -1250,7 +1378,7 @@ B<Syntax>
 
 B<Example>
 
-    my $incident = $sn->table("incident");
+    my $incident_tbl = $sn->table("incident");
     my @allrecs;
     foreach my $descr (@descriptions) {
         my $newrec = {
@@ -1260,7 +1388,7 @@ B<Example>
             impact => 3};
         push @allrecs, $newrec;
     }
-    my @results = $incident->insertMultiple(@allrecs);
+    my @results = $incident_tbl->insertMultiple(@allrecs);
     foreach my $result (@results) {
         print "inserted ", $result->{number}, "\n";
     }
@@ -1322,8 +1450,8 @@ The following example retrieves all keys for the C<cmdb_ci>
 table in chunks of 100,000 at a time.
 
     my $sn = ServiceNow($instance, $user, $pass, query => 100000);
-    my $cmdb_ci = $sn->table("cmdb_ci");
-    my $qry = $cmdb_ci->query();
+    my $cmdb_ci_tbl = $sn->table("cmdb_ci");
+    my $qry = $cmdb_ci_tbl->query();
 
 =cut
 
@@ -1467,32 +1595,33 @@ L<"update" Direct SOAP API method|http://wiki.servicenow.com/index.php?title=SOA
 
 B<Syntax>
 
-    $table->update(%parameters);
     $table->update($sys_id, %parameters);
+    $table->update(%parameters);
 
-Note: If the first syntax is used, 
-then the C<sys_id> must be included among the parameters.
-If the second syntax is used, then the C<sys_id>
+Note: 
+If the first syntax is used, then the C<sys_id>
 must be the first parameter.
+If the second syntax is used, 
+then the C<sys_id> must be included among the parameters.
 
-For reference fields (e.g. assignment_group, assigned_to)
+For reference fields (I<e.g.> assignment_group, assigned_to)
 you may pass in either a sys_id or a display value.
 
 B<Examples>
 
 The following three examples are equivalent.
 
-    $incident->update(
+    $incident_tbl->update(
         sys_id => $sys_id, 
         assigned_to => "5137153cc611227c000bbd1bd8cd2005",
         incient_state => 2);
         
-    $incident->update(
+    $incident_tbl->update(
         sys_id => $sys_id, 
         assigned_to => "Fred Luddy", 
         incident_state => 2);
     
-    $incident->update($sys_id, 
+    $incident_tbl->update($sys_id, 
         assigned_to => "Fred Luddy", 
         incident_state => 2);
 
@@ -1542,8 +1671,8 @@ the C<cmdb_rel_ci> table.
 The example involves two tables:
 C<cmdb_ci> and C<cmdb_rel_ci>.
 
-    my $cmdb_ci = $sn->table("cmdb_ci");
-    my $cmdb_rel_ci = $sn->table("cmdb_rel_ci");
+    my $cmdb_ci_tbl = $sn->table("cmdb_ci");
+    my $cmdb_rel_ci_tbl = $sn->table("cmdb_rel_ci");
     
 We assume that C<$parentKey> is the sys_id of a known configuration item.
 The objective is to print a list of all other configuration items 
@@ -1556,7 +1685,7 @@ C<@relData> is this list of C<cmdb_rel_ci> records.
 If there are more than 250 records, C<fetchAll> will loop internally 
 until all records have been retrieved.
 
-    my @relData = $cmdb_rel_ci->query(parent => $parentKey)->fetchAll();
+    my @relData = $cmdb_rel_ci_tbl->query(parent => $parentKey)->fetchAll();
 
 Next we extract the C<child> field from each of these C<cmdb_rel_ci>
 records to create a new list of sys_ids.
@@ -1567,7 +1696,7 @@ C<@childKeys> now contains a lists of sys_ids for configuration items.
 We convert this list of keys into a query object
 and fetch the records from the C<cmdb_ci> table.
     
-    @childRecs = $cmdb_ci->asQuery(@childKeys)->fetchAll();
+    @childRecs = $cmdb_ci_tbl->asQuery(@childKeys)->fetchAll();
     foreach my $childRec (@childRecs) {
         print $childRec->{name}, "\n";            
     }

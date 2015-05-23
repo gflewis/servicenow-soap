@@ -5,20 +5,12 @@ use ServiceNow::SOAP;
 use Test::More;
 use lib 't';
 use TestUtil;
+use File::Basename;
 
 # This script tests insert, update, attachFile and deleteRecord
 
-if (TestUtil::config) {
-    if (getProp('test_insert')) {
-        plan tests => 9;
-    }
-    else {
-        plan skip_all => "test_insert is false";
-    }
-}
-else {
-    plan skip_all => "no config";
-}
+plan skip_all => "no config" unless TestUtil::config;
+plan skip_all => "test_insert is false" unless TestUtil::getProp("test_insert");
 
 my $timestamp = TestUtil::getTimestamp;
 my $lorem = TestUtil::lorem;
@@ -59,9 +51,36 @@ SKIP: {
     skip "file attachment test skipped", 1 unless $attachment;
     
     note "attachment name is $attachment";
-    ok ($mimetype, "attachment type is $mimetype");
-    $incident->attachFile($sysid, $attachment, $mimetype);
+    my @attachments;
+    my ($parsename, $parsepath, $suffix ) = 
+        File::Basename::fileparse($attachment, "\.[^.]*");
+    if ($mimetype) {
+        # attach with manual type specification
+        ok ($mimetype, "attachment type is $mimetype");        
+        my $attachname = "attach1" . $suffix;
+        $incident->attachFile($sysid, $attachment, $attachname, $mimetype);
+        push @attachments, $attachname;
+    }
+    # attach with auto type detection
+    $incident->attachFile($sysid, $attachment);
+    push @attachments, $parsepath . $suffix;
+    my $sys_attachment = $sn->table('sys_attachment');
+    my @attach_recs = $sys_attachment->getRecords(table_name => 'incident', table_sys_id => $sysid);
+    ok (scalar(@attach_recs) == scalar(@attachments), scalar(@attachments) . ' attachments detected');
 }
+
+# 
+# Add two work notes
+#
+$incident->addWorkNote($sysid, 'Work note one');
+$incident->addWorkNote($sysid, 'Work note two');
+my @worknotes = $incident->getWorkNotes($sysid);
+ok (@worknotes == 2, "two work notes created");
+foreach my $note (@worknotes) {
+    my $value = $note->{value};
+    ok ($value =~ /^Work note \w+$/, "Note: $value");
+}
+
 #
 # Update the incident
 #
@@ -96,5 +115,7 @@ SKIP: {
     my $rec3 = $incident->get($sysid);
     ok (!$rec3, "incident deleted");    
   };
+
+done_testing;
 
 1;
