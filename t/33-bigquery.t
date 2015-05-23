@@ -6,10 +6,9 @@ use Time::HiRes;
 use lib 't';
 use TestUtil;
 
-if (TestUtil::config) { plan tests => 2 }
-else { plan skip_all => "no config" };
-
-# SOAP::Lite->import(+trace => 'debug');
+plan skip_all => "no config" unless TestUtil::config;
+plan skip_all => "big query skipped" unless TestUtil::getProp("big_query");
+plan tests => 2;
 
 my $sn = TestUtil::getSession();
 my $tblname = "cmdb_ci";

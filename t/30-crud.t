@@ -7,6 +7,12 @@ use lib 't';
 use TestUtil;
 use File::Basename;
 
+sub trim { 
+    my $s = shift; 
+    $s =~ s/^\s+|\s+$//g; 
+    return $s 
+};
+
 # This script tests insert, update, attachFile and deleteRecord
 
 plan skip_all => "no config" unless TestUtil::config;
@@ -70,16 +76,21 @@ SKIP: {
 }
 
 # 
-# Add two work notes
+# Add two work notes and one comments
 #
 $incident->addWorkNote($sysid, 'Work note one');
 $incident->addWorkNote($sysid, 'Work note two');
+$incident->addComment($sysid, $lorem);
 my @worknotes = $incident->getWorkNotes($sysid);
 ok (@worknotes == 2, "two work notes created");
 foreach my $note (@worknotes) {
     my $value = $note->{value};
     ok ($value =~ /^Work note \w+$/, "Note: $value");
 }
+my @comments = $incident->getComments($sysid);
+ok (@comments == 1, "one comment created");
+my $commentText = $comments[0]->{value};
+ok (trim($commentText) eq trim($lorem), "comment value matches");
 
 #
 # Update the incident
