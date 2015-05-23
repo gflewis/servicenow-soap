@@ -1796,7 +1796,7 @@ Sometimes, when you are developing a new script,
 it seems to hang at a certain point, 
 and you just want to know what it is doing.
 You can enable tracing of Web Service calls
-by setting the C<trace> parameter
+by setting the C<trace> option
 in the L</ServiceNow> function as follows.
 
     my $sn = ServiceNow($instance, $username, $password, trace => 1);
