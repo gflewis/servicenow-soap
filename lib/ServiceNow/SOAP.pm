@@ -1297,7 +1297,7 @@ encounter timeout errors. In this situation the recommendation
 is to fetch the keys in chunks by specifying 
 a C<query> option in the L</ServiceNow> function.
 The suggested initial setting is C<query =E<gt> 100000>.
-If timeouts are still a problem the reduce the value further.
+If timeouts are still a problem then reduce the value further.
 
 B<Syntax>
 
