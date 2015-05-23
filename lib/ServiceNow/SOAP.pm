@@ -765,6 +765,8 @@ or the number of records that match a set of parameters.
 This method requres installation of the
 L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#aggregate>.
 
+See also: L</countBy>
+
 B<Syntax >
 
     $count = $table->count();
@@ -804,6 +806,8 @@ The method returns a list of name/value pairs.
 
 This method requres installation of the
 L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#aggregate>.
+
+See also: L</count>
 
 B<Syntax>
 
@@ -878,6 +882,8 @@ The [only useful] purpose of this function
 is to that you can pass the result back in as an
 C<__exclude_columns>
 L<extended query parameter|http://wiki.servicenow.com/index.php?title=Direct_Web_Services#Extended_Query_Parameters>.
+
+See also: L</exclude>, L</include>
 
 B<Syntax>
 
@@ -1591,6 +1597,8 @@ or a string containing a comma delimited list of names.
 It will override any prior calls to L</exclude> or L</include>.
 It returns a reference to the modified Query object.
 
+See also: L</except>, L</include>
+
 B<Syntax>
 
     $query->exclude(@list_of_columns);
@@ -1727,6 +1735,7 @@ sub getKeys {
 
 This method will affect any subsequent calls to L</fetch>
 by limiting which columns are returned.
+This method utilizes the L</except> method documented above.
 By including only the needed columns in the query result,
 it is possible to significantly improve the performance of large queries.
 
@@ -1737,11 +1746,15 @@ It returns a reference to the modified Query object.
 
 For some reason the Direct Web Services API allows you to specify a 
 list of columns to be excluded from the query result,
-but there is no similar out-of-box capability to specify only the columns to be included.
-This function implements the more obviously needed behavior by inverting the list.
+but there is no similar out-of-box capability 
+to specify only the columns to be included.
+This function implements the more obviously needed behavior 
+by inverting the list.
 It uses the WSDL to generate a list of columns returned by L</getRecords>,
 and subtracts the specified names to create an C<"__exclude_columns">
 extended query parameter.
+
+See also: L</except>, L</exclude>
 
 B<Syntax>
 
