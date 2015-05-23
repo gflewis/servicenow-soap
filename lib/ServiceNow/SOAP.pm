@@ -326,7 +326,7 @@ Use of this method requires the C<soap_script> role and activation of the
 B<Syntax>
 
     my %outputs = $sn->call($name, %inputs);
-    my $outputs = $sn->call($name, $inputs);
+    my $outputs = $sn->call($name, $inputs); # $inputs must be a hash reference
 
 B<Example>
 
@@ -795,15 +795,29 @@ sub count {
 
 =head2 countBy
 
+This method counts the number of records in a table
+using a GROUP_BY parameter,
+which must be the name of a column in the table.
+As with L</count>,
+an encoded query or set of filter parameters can be specified.
+The method returns a list of name/value pairs.
+
+This method requres installation of the
+L<Aggregate Web Service plugin|http://wiki.servicenow.com/index.php?title=SOAP_Direct_Web_Service_API#aggregate>.
+
 B<Syntax>
 
-    %results = $table->countBy($groupByColumn);
-    %results = $table->countBy($groupByColumn, $encodedQuery);
-    %results = $table->countBy(%groupByColumn, %parameters);
+    %counts = $table->countBy($groupByColumn);
+    %counts = $table->countBy($groupByColumn, $encodedQuery);
+    %counts = $table->countBy(%groupByColumn, %parameters);
 
 B<Example>
 
     my %counts = $sn->table("incident")->countBy("category");
+    foreach my $key (keys %counts) {
+        my $count = $counts{$key};
+        print "category: $key, count: $count\n";
+    }
 
 =cut
 
@@ -811,7 +825,7 @@ sub countBy {
     my $self = shift;
     my $groupby = shift;
     Carp::croak "countBy missing groupby field" unless $groupby;
-    my @params = (COUNT => 'sys_id', GROUP_BY => $groupBy, @_);
+    my @params = (COUNT => 'sys_id', GROUP_BY => $groupby, @_);
     $self->traceBefore('aggregate count');
     my $som = $self->callMethod('aggregate' => _params @params);
     my @aggResults = @{$som->body->{aggregateResponse}{aggregateResult}};
