@@ -1,5 +1,13 @@
 Revision history for perl module ServiceNow::SOAP
 
+0.11 2015-05-23
+
+  - new method: countBy
+  - new method: getJournalEntries
+  - new methods: addWorkNote, addComment, getWorkNotes, getComments
+  - attachFile bug fixes and auto MIME type detection
+  - dist.ini additional Prereqs
+
 0.10 2015-05-16
 
  - Initial release
