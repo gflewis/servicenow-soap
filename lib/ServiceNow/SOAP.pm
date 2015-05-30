@@ -189,6 +189,11 @@ sub _params {
     return @params;
 }
 
+# print for debugging
+sub _trace {
+    print @_;
+}
+
 sub ServiceNow {
     return ServiceNow::SOAP::Session->new(@_);
 }
@@ -268,7 +273,7 @@ sub new {
     bless $session, $pkg;
     $session->set(@options);
     my $trace = $session->{trace};
-    print "url=$url; user=$user\n" if $trace;
+    $session->trace("url=$url; user=$user") if $trace;
     $context = $session;
     return $session;
 }
@@ -290,26 +295,37 @@ sub private {
 
 our $startTime;
 
+sub trace {
+    my ($session, $message) = @_;
+    ServiceNow::SOAP::_trace $message, "\n"; 
+}
+
 sub traceBefore {
-    my ($self, $trace, $methodname) = @_;
+    my ($session, $methodname) = @_;
+    my $trace = $session->{trace};
     return unless $trace;
-    my $tablename = $self->{name};
+    my $tablename = $session->{name};
     $| = 1;
-    print "$methodname...";
+    ServiceNow::SOAP::_trace "$methodname...";
     $startTime = Time::HiRes::time();
 }
 
 sub traceAfter {
-    my ($self, $trace, $message, $content) = @_;
+    my ($session, $message) = @_;
+    my $trace = $session->{trace};
     return unless $trace;
     my $finishTime = Time::HiRes::time();
     my $elapsed = $finishTime - $startTime;
-    print sprintf(" %.2fs ", $elapsed), $message, "\n";
-    if ($trace > 1) {
-        $content = $self->{client}->transport()->http_response()->content()
-            unless defined $content;
-        print $content, "\n";
-    }
+    ServiceNow::SOAP::_trace sprintf(" %.2fs ", $elapsed), $message, "\n";
+}
+
+sub traceContent {
+    my ($session, $content) = @_;
+    my $trace = $session->{trace};
+    return unless $trace > 1;
+    $content = $session->{client}->transport()->http_response()->content()
+        unless defined $content;
+    ServiceNow::SOAP::_trace $content, "\n";
 }
 
 =head2 call
@@ -339,21 +355,21 @@ B<Example>
 =cut
 
 sub call {
-    my $self = shift;
+    my $session = shift;
     my $function = shift;
-    my $trace = $self->{trace};
-    my $baseurl = $self->{url};
+    my $trace = $session->{trace};
+    my $baseurl = $session->{url};
     my $endpoint = "$baseurl/$function.do?SOAP";
-    my $client = $self->{client};
+    my $client = $session->{client};
     my @params = 
         (@_ && ref $_[0] eq 'HASH') ?
         ServiceNow::SOAP::_params(%{$_[0]}) :
         ServiceNow::SOAP::_params(@_);
-    $self->traceBefore($trace, $function);
-    $context = $self;
+    $session->traceBefore($function);
+    $context = $session;
     my $som = $client->endpoint($endpoint)->call('execute' => @params);
     Carp::croak $som->faultdetail if $som->fault;
-    $self->traceAfter($trace);
+    $session->traceAfter();
     my $response = $som->body->{executeResponse};
     if (ref $response eq 'HASH') {
         return wantarray ? %{$response} : $response;
@@ -380,16 +396,23 @@ B<Syntax>
 =cut
 
 sub connect {
-    my $self = shift;
-    my $username = $self->{user};
-    my $user_tbl = $self->table('sys_user');
+    my $session = shift;
+    my $trace = $session->{trace};
+    my $username = $session->{user};
+    my $user_tbl = $session->table('sys_user');
     my @recs;
     eval { @recs = $user_tbl->getRecords(user_name => $username) };
+    if ($@ or scalar(@recs) != 1 or
+            $recs[0]->{user_name} ne $username) {
+        my $trace = $session->{trace};
+        $session->trace("connect failed") if $trace;
+    }
+        
     return 0 if $@;
     return 0 unless scalar(@recs) == 1;
     my $rec = $recs[0];
     return 0 unless $rec->{user_name} eq $username;
-    return $self;
+    return $session;
 }
 
 =head2 loadSession
@@ -619,20 +642,22 @@ sub callMethod {
 }
 
 sub traceBefore {
-    my ($self, $methodname) = @_;
-    my $session = $self->{session};
+    my ($table, $methodname) = @_;
+    my $session = $table->{session};
     my $trace = $session->{trace};
     return unless $trace;
-    my $tablename = $self->{name};
-    $session->traceBefore($trace, "$tablename $methodname");
+    my $tablename = $table->{name};
+    $session->traceBefore("$methodname $tablename");
 }
 
 sub traceAfter {
-    my ($self, $message, $content) = @_;
-    my $session = $self->{session};
+    my ($table, $message, $content) = @_;
+    my $session = $table->{session};
     my $trace = $session->{trace};
     return unless $trace;
-    $session->traceAfter($trace, $message, $content);
+    $session->traceAfter($message);
+    return if $trace < 2;
+    $session->traceContent($content);
 }
 
 =head2 addComment
@@ -1174,7 +1199,8 @@ sub getRecords {
     }
     my $result = $response->{getRecordsResult};
     my $type = ref($result);
-    die "getRecords: Unexpected $type" unless ($type eq 'ARRAY' || $type eq 'HASH');
+    die "getRecords: Unexpected $type" 
+        unless ($type eq 'ARRAY' || $type eq 'HASH');
     my @records = ($type eq 'ARRAY') ? @{$result} : ($result);
     my $count = @records;
     $self->traceAfter("$count records");
