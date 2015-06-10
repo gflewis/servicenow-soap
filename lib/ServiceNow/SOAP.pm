@@ -1015,8 +1015,8 @@ sub get {
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     $self->traceBefore('get');
     my $som = $self->callMethod('get' =>  _params @_);
-    $self->traceAfter();
     my $result = $som->body->{getResponse};
+    $self->traceAfter($result ? 'ok' : 'fail');
     return $result;
 }
 
