@@ -1,5 +1,9 @@
 Revision history for perl module ServiceNow::SOAP
 
+0.12 2015-09-05
+
+  - changes to trace messages
+
 0.11 2015-05-23
 
   - new method: countBy
