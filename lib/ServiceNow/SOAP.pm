@@ -14,7 +14,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 =head1 NAME
 
@@ -268,6 +268,7 @@ sub new {
         fetch => 250,
         query => 0,
         client => $client,
+        cookiejar => $cookiejar,
         private => {}
     };
     bless $session, $pkg;
@@ -433,8 +434,8 @@ B<Syntax>
     
 sub loadSession {
     my ($self, $filename) = @_;
-    my $cookie_jar = $self->{cookie_jar};
-    $cookie_jar->load($filename);
+    my $cookiejar = $self->{cookiejar};
+    $cookiejar->load($filename);
 }
 
 =head2 saveSession
@@ -450,8 +451,8 @@ B<Syntax>
 
 sub saveSession {
     my ($self, $filename) = @_;
-    my $cookie_jar = $self->{cookie_jar};
-    $cookie_jar->save($filename);
+    my $cookiejar = $self->{cookiejar};
+    $cookiejar->save($filename);
 }
 
 =head2 set
@@ -863,7 +864,7 @@ sub count {
     my $self = shift;
     my @params = (COUNT => 'sys_id', @_);
     $self->traceBefore('aggregate count');
-    my $som = $self->callMethod('aggregate' => _params @params);
+    my $som = $self->callMethod('aggregate' => _params(@params));
     my $count = $som->body->{aggregateResponse}{aggregateResult}{COUNT};
     $self->traceAfter("count=$count");
     return $count;
@@ -905,7 +906,7 @@ sub countBy {
     Carp::croak "countBy missing groupby field" unless $groupby;
     my @params = (COUNT => 'sys_id', GROUP_BY => $groupby, @_);
     $self->traceBefore('aggregate count');
-    my $som = $self->callMethod('aggregate' => _params @params);
+    my $som = $self->callMethod('aggregate' => _params(@params));
     my @aggResults = @{$som->body->{aggregateResponse}{aggregateResult}};
     my $rows = @aggResults;
     $self->traceAfter("rows=$rows");
@@ -938,7 +939,7 @@ sub deleteRecord {
     my %values = @_;
     my $sysid = $values{sys_id};
     $self->traceBefore("deleteRecord $sysid");
-    my $som = $self->callMethod('deleteRecord', _params @_);
+    my $som = $self->callMethod('deleteRecord', _params(@_));
     $self->traceAfter();
     return $self;
 }
@@ -1014,7 +1015,7 @@ sub get {
     Carp::croak("get $tablename: missing argument") unless @_; 
     if (_isGUID($_[0])) { unshift @_, 'sys_id' };
     $self->traceBefore('get');
-    my $som = $self->callMethod('get' =>  _params @_);
+    my $som = $self->callMethod('get' =>  _params(@_));
     my $result = $som->body->{getResponse};
     $self->traceAfter($result ? 'ok' : 'fail');
     return $result;
@@ -1101,7 +1102,7 @@ B<Examples>
 sub getKeys {
     my $self = shift;
     $self->traceBefore('getKeys');
-    my $som = $self->callMethod('getKeys', _params @_);
+    my $som = $self->callMethod('getKeys', _params(@_));
     my @keys = split /,/, $som->result;
     my $count = @keys;
     $self->traceAfter("$count keys");
@@ -1191,7 +1192,7 @@ B<Example>
 sub getRecords {
     my $self = shift;
     $self->traceBefore('getRecords');
-    my $som = $self->callMethod('getRecords', _params @_);
+    my $som = $self->callMethod('getRecords', _params(@_));
     my $response = $som->body->{getRecordsResponse};
     unless (ref $response eq 'HASH') {
         $self->traceAfter("0 records");
@@ -1378,7 +1379,7 @@ you may pass in either a sys_id or a display value.
 sub insert {
     my $self = shift;
     $self->traceBefore('insert');
-    my $som = $self->callMethod('insert', _params @_);
+    my $som = $self->callMethod('insert', _params(@_));
     my $response = $som->body->{insertResponse};
     my $sysid = $response->{sys_id};
     $self->traceAfter();
@@ -1659,7 +1660,7 @@ sub update {
     my %values = @_;
     my $sysid = $values{sys_id};
     $self->traceBefore("update");
-    my $som = $self->callMethod('update', _params @_);
+    my $som = $self->callMethod('update', _params(@_));
     $self->traceAfter();
     return $self;
 }
