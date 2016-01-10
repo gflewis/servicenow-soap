@@ -1,5 +1,9 @@
 Revision history for perl module ServiceNow::SOAP
 
+0.13 2016-01-10
+
+  - bug fixes: saveSession, loadSession
+
 0.12 2015-09-05
 
   - changes to trace messages
