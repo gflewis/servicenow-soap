@@ -1,6 +1,7 @@
 package ServiceNow::SOAP;
 
 use strict;
+use warnings;
 require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(ServiceNow);
@@ -14,7 +15,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.13';
+our $VERSION = '0.15';
 
 =head1 NAME
 
@@ -217,7 +218,7 @@ The second argument is the user name.
 The third argument is the password.
 
 Various options can be specified as
-name value pairs following the password.
+name/value pairs following the password.
 For a list of options refer to L</set>.
 
 B<Syntax>
@@ -298,7 +299,7 @@ our $startTime;
 
 sub trace {
     my ($session, $message) = @_;
-    ServiceNow::SOAP::_trace $message, "\n"; 
+    ServiceNow::SOAP::_trace $message, "\n" if $message;
 }
 
 sub traceBefore {
@@ -317,7 +318,8 @@ sub traceAfter {
     return unless $trace;
     my $finishTime = Time::HiRes::time();
     my $elapsed = $finishTime - $startTime;
-    ServiceNow::SOAP::_trace sprintf(" %.2fs ", $elapsed), $message, "\n";
+    ServiceNow::SOAP::_trace sprintf(" %.2fs", $elapsed), 
+        $message ? " $message\n" : "\n";
 }
 
 sub traceContent {
@@ -326,7 +328,7 @@ sub traceContent {
     return unless $trace > 1;
     $content = $session->{client}->transport()->http_response()->content()
         unless defined $content;
-    ServiceNow::SOAP::_trace $content, "\n";
+    ServiceNow::SOAP::_trace $content, "\n" if $content;
 }
 
 =head2 call
@@ -370,7 +372,7 @@ sub call {
     $context = $session;
     my $som = $client->endpoint($endpoint)->call('execute' => @params);
     Carp::croak $som->faultdetail if $som->fault;
-    $session->traceAfter();
+    $session->traceAfter('');
     my $response = $som->body->{executeResponse};
     if (ref $response eq 'HASH') {
         return wantarray ? %{$response} : $response;
@@ -656,7 +658,7 @@ sub traceAfter {
     my $session = $table->{session};
     my $trace = $session->{trace};
     return unless $trace;
-    $session->traceAfter($message);
+    $session->traceAfter($message ? $message : '');
     return if $trace < 2;
     $session->traceContent($content);
 }
@@ -1229,7 +1231,7 @@ C<item_option_new>,
 C<sc_item_option> and
 C<sc_item_option_mtom>.
 
-Each hash contains the following four fields:
+Each hash contains the following file fields:
 
 =over
 
@@ -1921,7 +1923,7 @@ B<Syntax>
 B<Example>
 
 This example returns a list of all records in the C<cmdb_ci_computer> table,
-but only 5 columns are returnd.
+but only 5 columns are returned.
 
     my $tbl = $sn->table("cmdb_ci_computer");
     my $qry = $tbl->query()->include(
@@ -1945,6 +1947,24 @@ sub setIndex {
 }
 
 1;
+
+=head1 PROXY
+
+You may have trouble using the SOAP API if you are running Perl behind
+a proxy server.  
+The easiest solution is to configure the proxy with environment variables
+as in this example.
+
+    use ServiceNow::SOAP;
+    $ENV{HTTP_PROXY} = "http://my.proxy.server";
+    $ENV{HTTPS_PROXY} = $ENV{HTTP_PROXY};
+    $ENV{PERL_LWP_ENV_PROXY} = 1;
+    my $sn = ServiceNow($instance, $username, $password);
+
+This works because ServiceNow::SOAP is built on top of SOAP::Lite
+which is built on top of LWP.
+For more information refer to:
+L<http://search.cpan.org/dist/libwww-perl/lib/LWP.pm#ENVIRONMENT>
 
 =head1 DIAGNOSTICS
 
