@@ -1,5 +1,9 @@
 Revision history for perl module ServiceNow::SOAP
 
+0.15 2016-01-24
+
+  - fix URL in perldoc
+
 0.14 2016-01-24
 
   - remove trace warnings

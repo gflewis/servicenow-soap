@@ -15,7 +15,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 =head1 NAME
 
@@ -1964,8 +1964,7 @@ as in this example.
 This works because ServiceNow::SOAP is built on top of SOAP::Lite
 which is built on top of LWP.
 For more information refer to:
-
-L<http://search.cpan/org/dist/libwww-perl/lib/LWP.pm#ENVIRONMENT>
+L<http://search.cpan.org/dist/libwww-perl/lib/LWP.pm#ENVIRONMENT>
 
 =head1 DIAGNOSTICS
 
