@@ -1231,7 +1231,7 @@ C<item_option_new>,
 C<sc_item_option> and
 C<sc_item_option_mtom>.
 
-Each hash contains the following file fields:
+Each hash contains the following five fields:
 
 =over
 
