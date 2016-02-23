@@ -17,10 +17,10 @@ SKIP : {
     skip "web_service not defined", 2 unless $ws;
     my $name = $ws->{name};
     skip "web_service name not defined", 2 unless $name;
-    note "calling Web Service \"$name\"";
+    note "execute Web Service \"$name\"";
     my %inputs = %{$ws->{inputs}};
     my @outnames = @{$ws->{outputs}};
-    my $outputs = $sn->call($name, %inputs);
+    my $outputs = $sn->execute($name, %inputs);
     ok (ref $outputs eq 'HASH', "call returned hash");
     my $need = @outnames;
     my $good = 0;

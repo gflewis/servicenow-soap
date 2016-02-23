@@ -338,55 +338,8 @@ This is an alias for the L<execute> method described below.
 
 =cut
 
-=head2 execute
-
-This method calls a 
-L<Scripted Web Service|http://wiki.servicenow.com/index.php?title=Scripted_Web_Services>.
-The input parameters can be passed in as list of key/value pairs
-or as a hash reference.
-In a list context this method will return a list of key/value pairs.
-In a scalar context it will return a hash reference.
-
-Use of this method requires the C<soap_script> role and activation of the 
-"Web Services Provider - Scripted" plugin.
-
-B<Syntax>
-
-    my %outputs = $sn->execute($name, %inputs);
-    my $outputs = $sn->execute($name, $inputs); # $inputs must be a hash reference
-
-B<Example>
-
-    my %outputs = $sn->execute('OrderBlackBerry',
-        phone_number => '555-555-5555',
-        requested_for => 'Fred Luddy');
-    print "created request ", $outputs{request_number}, "\n";
-
-=cut
-
-sub execute {
-    my $session = shift;
-    my $function = shift;
-    my $trace = $session->{trace};
-    my $baseurl = $session->{url};
-    my $endpoint = "$baseurl/$function.do?SOAP";
-    my $client = $session->{client};
-    my @params = 
-        (@_ && ref $_[0] eq 'HASH') ?
-        ServiceNow::SOAP::_params(%{$_[0]}) :
-        ServiceNow::SOAP::_params(@_);
-    $session->traceBefore($function);
-    $context = $session;
-    my $som = $client->endpoint($endpoint)->call('execute' => @params);
-    Carp::croak $som->faultdetail if $som->fault;
-    $session->traceAfter('');
-    my $response = $som->body->{executeResponse};
-    if (ref $response eq 'HASH') {
-        return wantarray ? %{$response} : $response;
-    }
-    else {  
-        return wantarray ? () : undef;
-    }
+sub call {
+    execute(@_);
 }
 
 =head2 connect
@@ -423,6 +376,64 @@ sub connect {
     my $rec = $recs[0];
     return 0 unless $rec->{user_name} eq $username;
     return $session;
+}
+
+=head2 execute
+
+This method calls the "execute" function on a 
+L<Scripted Web Service|http://wiki.servicenow.com/index.php?title=Scripted_Web_Services>.
+The first argument is the name of the Scripted Web Service.
+This may be followed by input parameters 
+which can be passed in as list of key/value pairs
+or as a hash reference.
+In a list context this method returns the output parameters as a list of key/value pairs.
+In a scalar context it returns the output parameters as a hash reference.
+
+Use of this method requires the C<soap_script> role and activation of the 
+"Web Services Provider - Scripted" plugin.
+
+B<Syntax>
+
+    my %outputs = $sn->execute($name, %inputs); # %inputs is a list or hash
+    my $outputs = $sn->execute($name, $inputs); # $inputs is a hash reference
+
+B<Examples>
+
+    my %outputs = $sn->execute('GetProperty', property => 'glide.product.description');
+    my $value = $outputs{'property'};
+
+    my $outputs = $sn->execute('InstanceInfo');
+    my @keys = keys %{$outputs->{result}};
+    foreach my $key (@keys) {
+        my $value = $outputs->{result}->{$key};
+        print "$key=$value\n";
+    }
+    
+=cut
+
+sub execute {
+    my $session = shift;
+    my $function = shift;
+    my $trace = $session->{trace};
+    my $baseurl = $session->{url};
+    my $endpoint = "$baseurl/$function.do?SOAP";
+    my $client = $session->{client};
+    my @params = 
+        (@_ && ref $_[0] eq 'HASH') ?
+        ServiceNow::SOAP::_params(%{$_[0]}) :
+        ServiceNow::SOAP::_params(@_);
+    $session->traceBefore($function);
+    $context = $session;
+    my $som = $client->endpoint($endpoint)->call('execute' => @params);
+    Carp::croak $som->faultdetail if $som->fault;
+    $session->traceAfter('');
+    my $response = $som->body->{executeResponse};
+    if (ref $response eq 'HASH') {
+        return wantarray ? %{$response} : $response;
+    }
+    else {  
+        return wantarray ? () : undef;
+    }
 }
 
 =head2 loadSession
