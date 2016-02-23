@@ -15,7 +15,7 @@ use XML::Simple;
 use Time::HiRes;
 use Carp;
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 =head1 NAME
 
@@ -333,6 +333,13 @@ sub traceContent {
 
 =head2 call
 
+This method is deprecated and will be removed in a future release.
+This is an alias for the L<execute> method described below.
+
+=cut
+
+=head2 execute
+
 This method calls a 
 L<Scripted Web Service|http://wiki.servicenow.com/index.php?title=Scripted_Web_Services>.
 The input parameters can be passed in as list of key/value pairs
@@ -345,19 +352,19 @@ Use of this method requires the C<soap_script> role and activation of the
 
 B<Syntax>
 
-    my %outputs = $sn->call($name, %inputs);
-    my $outputs = $sn->call($name, $inputs); # $inputs must be a hash reference
+    my %outputs = $sn->execute($name, %inputs);
+    my $outputs = $sn->execute($name, $inputs); # $inputs must be a hash reference
 
 B<Example>
 
-    my %outputs = $sn->call('OrderBlackBerry',
+    my %outputs = $sn->execute('OrderBlackBerry',
         phone_number => '555-555-5555',
         requested_for => 'Fred Luddy');
     print "created request ", $outputs{request_number}, "\n";
 
 =cut
 
-sub call {
+sub execute {
     my $session = shift;
     my $function = shift;
     my $trace = $session->{trace};
