@@ -2,7 +2,8 @@ Revision history for perl module ServiceNow::SOAP
 
 0.16 2016-02-23
 
-  - rename 'call' to 'execute' and update test scripts
+  - rename 'call' to 'execute'
+  - update test scripts and POD for same
 
 0.15 2016-01-24
 

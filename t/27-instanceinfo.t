@@ -14,7 +14,7 @@ my @keys = keys %{$outputs->{result}};
 ok (scalar(@keys) > 0, "num values is " . scalar(@keys));
 foreach my $key (@keys) {
 	my $value = $outputs->{result}->{$key};
-	diag "$key=$value\n";
+	note "$key=$value\n";
 }
 
 1;
